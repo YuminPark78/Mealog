@@ -19,5 +19,8 @@
   "bugs": {
     "url": "https://github.com/YuminPark78/Mealog/issues"
   },
-  "homepage": "https://github.com/YuminPark78/Mealog#readme"
+  "homepage": "https://github.com/YuminPark78/Mealog#readme",
+  "devDependencies": {
+    "supabase": "2.121.0"
+  }
 }
