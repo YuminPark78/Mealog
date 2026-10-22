@@ -7,7 +7,13 @@ authors = [
     { name = "Yumin Park", email = "yumin.park02@gmail.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "fastapi>=0.159.1",
+    "pydantic-settings>=2.16.1",
+    "pydexcom>=0.5.1",
+    "supabase>=2.33.0",
+    "uvicorn[standard]>=0.54.0",
+]
 
 [project.scripts]
 mealog-api = "mealog_api:main"
@@ -21,3 +27,12 @@ dev = [
     "pytest>=9.1.1",
     "ruff>=0.17.1",
 ]
+
+[tool.pyrefly]
+python-interpreter-path = ".venv/bin/python"
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+
+
