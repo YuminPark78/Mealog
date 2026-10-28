@@ -1,3 +1,4 @@
+# Load settings; Read the Supabase URL from `.env`
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict

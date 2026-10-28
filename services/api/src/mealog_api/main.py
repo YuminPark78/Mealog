@@ -1,3 +1,4 @@
+# Assembles the backend; Register the meal and health endpoints.
 import logging
 
 from fastapi import FastAPI, HTTPException
@@ -6,6 +7,7 @@ from pydantic import BaseModel, TypeAdapter
 from supabase import create_client
 
 from mealog_api.config import settings
+from mealog_api.routes.meals import router as meals_router
 
 
 class ConnectionCheck(BaseModel):
@@ -16,6 +18,7 @@ class ConnectionCheck(BaseModel):
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Mealog API")
+app.include_router(meals_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,7 +26,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ],
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
