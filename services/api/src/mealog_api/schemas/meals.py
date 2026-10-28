@@ -28,7 +28,8 @@ class MealCreate(BaseModel):
 
 
 class MealRead(MealCreate):
-    """Information returned after a meal has been saved."""  # DB generated fields
+    """A saved meal belonging to one user."""  # DB generated fields
 
     id: UUID
+    user_id: UUID
     created_at: AwareDatetime
