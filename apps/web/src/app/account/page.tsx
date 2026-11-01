@@ -5,16 +5,8 @@ import type { Session } from "@supabase/supabase-js";
 
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { apiRequest } from "@/lib/api";
-
-type Meal = {
-    id: string;
-    user_id: string;
-    name: string;
-    carbohydrates_g: number | null;
-    eaten_at: string;
-    notes: string | null;
-    created_at: string;
-};
+import type { Meal } from "@/lib/meals";
+import MealContextForm from "@/components/meals/meal-context-form";
 
 function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : "Something went wrong.";
@@ -229,6 +221,14 @@ function PrivateMeals({ session }: { session: Session }) {
         }
     }
 
+    function replaceMeal(updated: Meal) {
+        setMeals((current) =>
+            current.map((meal) =>
+                meal.id === updated.id ? updated : meal,
+            ),
+        );
+    }
+
     return (
         <section className="space-y-6">
             <div>
@@ -256,7 +256,7 @@ function PrivateMeals({ session }: { session: Session }) {
                     </label>
 
                     <label className="block">
-                        Carbohydrates in grams — optional
+                        Estimated carbohydrates in the full serving — optional
                         <input
                             name="carbohydrates_g"
                             type="number"
@@ -300,9 +300,15 @@ function PrivateMeals({ session }: { session: Session }) {
                                 <p>
                                     {meal.carbohydrates_g === null
                                         ? "Carbohydrates unknown"
-                                        : `${meal.carbohydrates_g} g carbohydrates`}
+                                        : `${meal.carbohydrates_g} g carbohydrates in the full serving`}
                                 </p>
                                 <p>{new Date(meal.eaten_at).toLocaleString()}</p>
+
+                                <MealContextForm
+                                    meal={meal}
+                                    accessToken={token}
+                                    onSaved={replaceMeal}
+                                />
                             </li>
                         ))}
                     </ul>

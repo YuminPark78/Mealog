@@ -77,6 +77,38 @@ def main():
         )
         assert spoofed.status_code == 422, spoofed.text
 
+        attempt = api.patch(
+            f"/meals/{alice_meal['id']}/context",
+            headers={"Authorization": f"Bearer {bob_token}"},
+            json={"notes": "Bob must not be able to write this"},
+        )
+        assert attempt.status_code == 404, attempt.text
+
+        before = (
+            alice_client.table("meals")
+            .select("notes,context_updated_at")
+            .eq("id", alice_meal["id"])
+            .execute()
+        ).data
+
+        attempt = (
+            bob_client.table("meals")
+            .update({"notes": "Blocked direct update"})
+            .eq("id", alice_meal["id"])
+            .execute()
+        )
+
+        assert attempt.data == []
+
+        after = (
+            alice_client.table("meals")
+            .select("notes,context_updated_at")
+            .eq("id", alice_meal["id"])
+            .execute()
+        ).data
+
+        assert after == before
+
     # Direct Supabase read as Bob: Alice's row must be invisible.
     result = bob_client.table("meals").select("id").eq("id", alice_meal["id"]).execute()
     assert result.data == []
