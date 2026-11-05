@@ -7,6 +7,7 @@ import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { apiRequest } from "@/lib/api";
 import type { Meal } from "@/lib/meals";
 import MealContextForm from "@/components/meals/meal-context-form";
+import InsulinEventsPanel from "@/components/insulin/insulin-events-panel";
 
 function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : "Something went wrong.";
@@ -314,6 +315,12 @@ function PrivateMeals({ session }: { session: Session }) {
                     </ul>
                 )}
             </section>
+            {!loading && (
+                <InsulinEventsPanel
+                    accessToken={token}
+                    meals={meals}
+                />
+            )}
         </section>
     );
 }

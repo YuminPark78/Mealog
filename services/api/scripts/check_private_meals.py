@@ -63,6 +63,84 @@ def main():
         alice_meal = saved.json()
         assert alice_meal["user_id"] == alice_id
 
+        insulin_payload = {
+            "meal_id": alice_meal["id"],
+            "dose_units": "2.5",
+            "insulin_name": "Synthetic test insulin",
+            "injected_at": datetime.now(UTC).isoformat(),
+            "notes": "Development ownership test",
+        }
+
+        # Alice may link an event to her own meal.
+        saved_event = api.post(
+            "/insulin-events",
+            headers={"Authorization": f"Bearer {alice_token}"},
+            json=insulin_payload,
+        )
+        assert saved_event.status_code == 201, saved_event.text
+
+        alice_event = saved_event.json()
+        assert alice_event["user_id"] == alice_id
+        assert alice_event["meal_id"] == alice_meal["id"]
+
+        # Alice may also record an unlinked event.
+        unlinked = api.post(
+            "/insulin-events",
+            headers={"Authorization": f"Bearer {alice_token}"},
+            json={**insulin_payload, "meal_id": None},
+        )
+        assert unlinked.status_code == 201, unlinked.text
+
+        # Bob cannot link an event to Alice's meal.
+        forbidden_link = api.post(
+            "/insulin-events",
+            headers={"Authorization": f"Bearer {bob_token}"},
+            json=insulin_payload,
+        )
+        assert forbidden_link.status_code == 404, forbidden_link.text
+
+        assert api.get("/insulin-events").status_code == 401
+
+        # Bob's API list must contain only Bob's records.
+        bob_events = api.get(
+            "/insulin-events",
+            headers={"Authorization": f"Bearer {bob_token}"},
+        )
+        assert bob_events.status_code == 200, bob_events.text
+        assert all(
+            event["user_id"] == bob_id
+            for event in bob_events.json()
+        )
+
+        # Direct database access cannot reveal Alice's event.
+        result = (
+            bob_client.table("insulin_events")
+            .select("id")
+            .eq("id", alice_event["id"])
+            .execute()
+        )
+        assert result.data == []
+
+        # Direct insert with Bob's ownership but Alice's meal fails.
+        try:
+            bob_client.table("insulin_events").insert(
+                {**insulin_payload, "user_id": bob_id}
+            ).execute()
+        except PostgrestAPIError as error:
+            assert error.code in {"42501", "23503"}, error
+        else:
+            raise AssertionError("Bob linked to Alice's meal.")
+
+        # Direct insert claiming Alice's ownership also fails.
+        try:
+            bob_client.table("insulin_events").insert(
+                {**insulin_payload, "user_id": alice_id}
+            ).execute()
+        except PostgrestAPIError as error:
+            assert error.code == "42501", error
+        else:
+            raise AssertionError("Bob created an event owned by Alice.")
+
         bob_response = api.get(
             "/meals",
             headers={"Authorization": f"Bearer {bob_token}"},

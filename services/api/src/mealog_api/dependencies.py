@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from typing import Annotated
 from uuid import UUID
 
@@ -7,12 +8,15 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from supabase import (
     AuthApiError,
     AuthRetryableError,
+    Client,
     ClientOptions,
     create_client,
 )
 
 from mealog_api.config import settings
+from mealog_api.repositories.insulin_events import InsulinEventsRepository
 from mealog_api.repositories.meals import MealsRepository
+from mealog_api.services.insulin_events import InsulinEventsService
 from mealog_api.services.meals import MealsService
 
 logger = logging.getLogger(__name__)
@@ -24,10 +28,14 @@ BearerCredentials = Annotated[
     Depends(bearer),
 ]
 
+@dataclass(frozen=True)
+class AuthenticatedDatabase:
+    client: Client
+    user_id: UUID
 
-def get_meals_service(
+def get_authenticated_database(
     credentials: BearerCredentials,
-) -> MealsService:
+) -> AuthenticatedDatabase:
     unauthorized = HTTPException(
         status_code=401,
         detail="Please log in again.",
@@ -76,5 +84,26 @@ def get_meals_service(
 
     client.postgrest.auth(token)  # Attach the token to subsequent db requests
 
-    repository = MealsRepository(client, user_id)
+    return AuthenticatedDatabase(
+        client=client,
+        user_id=user_id,
+    )
+
+AuthenticatedDatabaseDependency = Annotated[
+    AuthenticatedDatabase,
+    Depends(get_authenticated_database)
+]
+
+def get_meals_service(database: AuthenticatedDatabaseDependency) -> MealsService:
+    repository = MealsRepository(
+        database.client,
+        database.user_id,
+    )
     return MealsService(repository)
+
+def get_insulin_events_service(database: AuthenticatedDatabaseDependency) -> InsulinEventsService:
+    repository = InsulinEventsRepository(
+        database.client,
+        database.user_id,
+    )
+    return InsulinEventsService(repository)
