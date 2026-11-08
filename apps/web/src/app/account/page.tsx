@@ -8,6 +8,7 @@ import { apiRequest } from "@/lib/api";
 import type { Meal } from "@/lib/meals";
 import MealContextForm from "@/components/meals/meal-context-form";
 import InsulinEventsPanel from "@/components/insulin/insulin-events-panel";
+import MealGlucoseChart from "@/components/glucose/meal-glucose-chart";
 
 function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : "Something went wrong.";
@@ -309,6 +310,11 @@ function PrivateMeals({ session }: { session: Session }) {
                                     meal={meal}
                                     accessToken={token}
                                     onSaved={replaceMeal}
+                                />
+
+                                <MealGlucoseChart
+                                    mealId={meal.id}
+                                    accessToken={token}
                                 />
                             </li>
                         ))}
