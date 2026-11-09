@@ -144,6 +144,7 @@ function AuthForm() {
 }
 
 function PrivateMeals({ session }: { session: Session }) {
+    const [timelineVersion, setTimelineVersion] = useState(0);
     const [meals, setMeals] = useState<Meal[]>([]);
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState(false);
@@ -224,6 +225,7 @@ function PrivateMeals({ session }: { session: Session }) {
     }
 
     function replaceMeal(updated: Meal) {
+        setTimelineVersion((version) => version + 1);
         setMeals((current) =>
             current.map((meal) =>
                 meal.id === updated.id ? updated : meal,
@@ -313,6 +315,7 @@ function PrivateMeals({ session }: { session: Session }) {
                                 />
 
                                 <MealGlucoseChart
+                                    key={`${meal.id}-${timelineVersion}`}
                                     mealId={meal.id}
                                     accessToken={token}
                                 />
@@ -325,6 +328,7 @@ function PrivateMeals({ session }: { session: Session }) {
                 <InsulinEventsPanel
                     accessToken={token}
                     meals={meals}
+                    onSaved={() => setTimelineVersion((version) => version + 1)}
                 />
             )}
         </section>

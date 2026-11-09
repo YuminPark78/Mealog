@@ -17,11 +17,21 @@ class LinkedMealNotFoundError(Exception):
 class InsulinEventsService:
     def __init__(self, repository: InsulinEventsRepository):
         self.repository = repository
-    
+
+    def update(
+        self, event_id: UUID, event: InsulinEventCreate
+    ) -> InsulinEventRead | None:
+        if event.meal_id is not None and not self.repository.owns_meal(event.meal_id):
+            raise LinkedMealNotFoundError
+        normalized = event.model_copy(
+            update={"injected_at": event.injected_at.astimezone(UTC)}
+        )
+        return self.repository.update(event_id, normalized)
+
     def create(self, event: InsulinEventCreate) -> InsulinEventRead:
         if event.meal_id is not None and not self.repository.owns_meal(event.meal_id):
             raise LinkedMealNotFoundError
-        
+
         normalized = event.model_copy(
             update={
                 "injected_at": event.injected_at.astimezone(UTC),
@@ -30,8 +40,10 @@ class InsulinEventsService:
 
         return self.repository.create(normalized)
 
-    def list_recent(self, limit: int, meal_id: UUID | None = None) -> list[InsulinEventRead]:
+    def list_recent(
+        self, limit: int, meal_id: UUID | None = None
+    ) -> list[InsulinEventRead]:
         if meal_id is not None and not self.repository.owns_meal(meal_id):
             raise LinkedMealNotFoundError
 
-        return self.repository.list_recent(limit, meal_id) 
+        return self.repository.list_recent(limit, meal_id)

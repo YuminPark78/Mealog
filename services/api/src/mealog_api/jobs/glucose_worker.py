@@ -11,7 +11,6 @@ from mealog_api.collector_config import (
 from mealog_api.integrations.dexcom import fetch_recent
 from mealog_api.schemas.glucose import assess_coverage
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -63,7 +62,7 @@ def finish_job(db, job, status, connection_id=None, error=None):
     )
 
 
-def process_one(fetcher=fetch_recent) -> bool:
+def process_one(fetcher=fetch_recent, *, meal_id=None) -> bool:
     # The transaction holds the job/window locks until completion.
     # A crash rolls back its changes and leaves the job available.
     with connect_database() as db:
@@ -79,10 +78,12 @@ def process_one(fetcher=fetch_recent) -> bool:
                 on glucose_window.meal_id = job.meal_id
             where job.done = false
               and job.run_at <= now()
+              and (%s::uuid is null or job.meal_id = %s::uuid)
             order by job.run_at
             limit 1
             for update of job, glucose_window skip locked
-            """
+            """,
+            (meal_id, meal_id),
         ).fetchone()
 
         if job is None:
@@ -135,14 +136,16 @@ def process_one(fetcher=fetch_recent) -> bool:
             return True
 
         if job["window_start"] > now:
-            finish_job(db, job, "pending", connection_id)
+            # Keep the initial job available when a future meal becomes due.
+            db.execute(
+                "update mealog_private.glucose_jobs set run_at = %s where id = %s",
+                (job["window_start"], job["job_id"]),
+            )
             return True
 
         try:
             credentials = json.loads(
-                credential_cipher().decrypt(
-                    connection["ciphertext"].encode()
-                )
+                credential_cipher().decrypt(connection["ciphertext"].encode())
             )
 
             batch = fetcher(credentials)
@@ -172,7 +175,11 @@ def process_one(fetcher=fetch_recent) -> bool:
 
             status = (
                 "pending"
-                if now < job["window_end"] + timedelta(minutes=10)
+                if retry
+                or (
+                    job["kind"] == "initial"
+                    and now < job["window_end"] + timedelta(minutes=10)
+                )
                 else "failed"
             )
 
@@ -191,11 +198,7 @@ def process_one(fetcher=fetch_recent) -> bool:
             return True
 
         for reading in batch.readings:
-            if not (
-                job["window_start"]
-                <= reading.measured_at
-                <= job["window_end"]
-            ):
+            if not (job["window_start"] <= reading.measured_at <= job["window_end"]):
                 continue
 
             db.execute(

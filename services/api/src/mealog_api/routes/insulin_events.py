@@ -28,6 +28,36 @@ ServiceDependency = Annotated[
 ]
 
 
+@router.put("/{event_id}", response_model=InsulinEventRead)
+def update_insulin_event(
+    event_id: UUID,
+    event: InsulinEventCreate,
+    service: ServiceDependency,
+):
+    """Replace editable fields; ownership and creation time remain unchanged."""
+    try:
+        updated = service.update(event_id, event)
+    except LinkedMealNotFoundError:
+        raise HTTPException(status_code=404, detail="Linked meal not found.") from None
+    except PostgrestAPIError as error:
+        if error.code == "23503":
+            raise HTTPException(
+                status_code=404, detail="Linked meal not found."
+            ) from None
+        logger.exception("Failed to update insulin event")
+        raise HTTPException(
+            status_code=503, detail="Could not update insulin event."
+        ) from None
+    except Exception:
+        logger.exception("Failed to update insulin event")
+        raise HTTPException(
+            status_code=503, detail="Could not update insulin event."
+        ) from None
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Insulin event not found.")
+    return updated
+
+
 @router.post(
     "",
     response_model=InsulinEventRead,

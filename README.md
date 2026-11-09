@@ -29,3 +29,6 @@
 | Frontend | [localhost:3000](http://localhost:3000) |
 | FastAPI documentation | [127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) |
 | Supabase Studio | [127.0.0.1:54323](http://127.0.0.1:54323) |
+
+See [milestones 3–5 implementation and verification](docs/milestones-3-5.md) for
+the timestamp migration, insulin editing, collector setup, API examples and checks.

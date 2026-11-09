@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 
 import { apiRequest } from "@/lib/api";
+import { fromLocalDateTime, toLocalDateTime } from "@/lib/datetime";
 import {
     ACTIVITY_OPTIONS,
     getMealContextChanges,
@@ -23,6 +24,8 @@ export default function MealContextForm({
 }: Props) {
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState("");
+    const [activity, setActivity] = useState(meal.activity_after ?? "");
+    const [note, setNote] = useState(meal.notes ?? "");
 
     async function saveContext(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -32,11 +35,20 @@ export default function MealContextForm({
         const after = String(values.get("activity_after"));
         const fraction = String(values.get("fraction_consumed"));
         const notes = String(values.get("notes")).trim();
+        const activityTime = String(values.get("activity_at") ?? "");
+        const noteTime = String(values.get("notes_at") ?? "");
+
+        if ((after && !activityTime) || (notes && !noteTime)) {
+            setMessage("Enter the occurrence time for the activity and note you record.");
+            return;
+        }
 
         const changes = getMealContextChanges(meal, {
             activity_after: after === "" ? null : (after as ActivityLevel),
+            activity_at: after ? fromLocalDateTime(activityTime, meal.activity_at) : null,
             fraction_consumed: fraction === "" ? null : Number(fraction),
             notes: notes === "" ? null : notes,
+            notes_at: notes ? fromLocalDateTime(noteTime, meal.notes_at) : null,
         });
 
         if (Object.keys(changes).length === 0) {
@@ -77,17 +89,18 @@ export default function MealContextForm({
             </summary>
 
             <p className="mt-3 text-sm">
-                Optional: add these details after eating. For activity afterward,
-                describe the first hour after the meal.
+                Record when the activity or note applies, using your device&apos;s timezone.
+                Older details may need an occurrence time added before saving.
             </p>
 
             <form onSubmit={saveContext} className="mt-3">
                 <fieldset disabled={busy} className="space-y-3">
                     <label className="block">
-                        In the first hour after eating
+                        Activity after eating
                         <select
                             name="activity_after"
-                            defaultValue={meal.activity_after ?? ""}
+                            value={activity}
+                            onChange={(event) => setActivity(event.target.value)}
                             className="block w-full rounded border p-2"
                         >
                             <option value="">Not recorded</option>
@@ -97,6 +110,14 @@ export default function MealContextForm({
                                 </option>
                             ))}
                         </select>
+                    </label>
+
+                    <label className="block">
+                        Activity time
+                        <input name="activity_at" type="datetime-local" step="0.001"
+                            required={Boolean(activity)} disabled={!activity}
+                            defaultValue={toLocalDateTime(meal.activity_at)}
+                            className="block w-full rounded border p-2" />
                     </label>
 
                     <label className="block">
@@ -123,11 +144,20 @@ export default function MealContextForm({
                         Notes — optional
                         <textarea
                             name="notes"
-                            defaultValue={meal.notes ?? ""}
+                            value={note}
+                            onChange={(event) => setNote(event.target.value)}
                             maxLength={2000}
                             rows={3}
                             className="block w-full rounded border p-2"
                         />
+                    </label>
+
+                    <label className="block">
+                        Note occurrence time
+                        <input name="notes_at" type="datetime-local" step="0.001"
+                            required={Boolean(note.trim())} disabled={!note.trim()}
+                            defaultValue={toLocalDateTime(meal.notes_at)}
+                            className="block w-full rounded border p-2" />
                     </label>
 
                     <button

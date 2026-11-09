@@ -18,6 +18,7 @@ def valid_payload():
         ("name", "   "),
         ("carbohydrates_g", -5),
         ("eaten_at", "2026-10-23T12:30:00"),
+        ("notes_at", "2026-11-09T04:00:00Z"),
     ],
 )
 def test_invalid_meal_is_rejected(field, value):

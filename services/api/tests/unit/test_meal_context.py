@@ -13,6 +13,10 @@ from mealog_api.schemas.meals import MealContextUpdate
         {"activity_before": "unrecognised"},
         {"user_id": "someone-else"},
         {"notes": "x" * 2001},
+        {"notes": "A walk"},
+        {"notes": "A walk", "notes_at": "2026-11-09T12:00:00"},
+        {"activity_after": "light_activity", "activity_at": None},
+        {"activity_after": None, "activity_at": "2026-11-09T12:00:00Z"},
     ],
 )
 def test_invalid_context_is_rejected(payload):
@@ -29,10 +33,11 @@ def test_partial_update_preserves_omitted_fields():
 
 
 def test_explicit_null_clears_a_field():
-    changes = MealContextUpdate(activity_after=None)
+    changes = MealContextUpdate(activity_after=None, activity_at=None)
 
     assert changes.model_dump(exclude_unset=True) == {
         "activity_after": None,
+        "activity_at": None,
     }
 
 
@@ -40,3 +45,14 @@ def test_zero_consumption_is_preserved():
     changes = MealContextUpdate(fraction_consumed=0)
 
     assert changes.fraction_consumed == 0
+
+
+def test_event_times_are_independent_of_update_time():
+    changes = MealContextUpdate(
+        activity_after="light_activity",
+        activity_at="2026-11-09T12:30:00+08:00",
+        notes="Walk started",
+        notes_at="2026-11-09T12:35:00+08:00",
+    )
+    assert changes.activity_at != changes.notes_at
+    assert changes.model_dump(mode="json")["activity_at"].endswith("+08:00")

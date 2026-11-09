@@ -4,11 +4,13 @@ from pydantic import AwareDatetime, BaseModel, TypeAdapter
 from supabase import Client
 
 from mealog_api.schemas.glucose import (
+    ActivityMarker,
     GlucoseReading,
     GlucoseSnapshot,
     GlucoseWindow,
     InsulinMarker,
     MealMarker,
+    NoteMarker,
 )
 
 
@@ -32,9 +34,7 @@ class GlucoseRepository:
             .execute()
         )
 
-        windows = TypeAdapter(
-            list[GlucoseWindow]
-        ).validate_python(result.data)
+        windows = TypeAdapter(list[GlucoseWindow]).validate_python(result.data)
 
         if not windows:
             return None
@@ -46,10 +46,7 @@ class GlucoseRepository:
         if window.connection_id is not None:
             result = (
                 self.client.table("glucose_readings")
-                .select(
-                    "measured_at,glucose_mg_dl,trend,"
-                    "conflict_detected"
-                )
+                .select("measured_at,glucose_mg_dl,trend,conflict_detected")
                 .eq("user_id", str(self.user_id))
                 .eq("connection_id", str(window.connection_id))
                 .gte("measured_at", window.window_start.isoformat())
@@ -58,9 +55,7 @@ class GlucoseRepository:
                 .execute()
             )
 
-            readings = TypeAdapter(
-                list[GlucoseReading]
-            ).validate_python(result.data)
+            readings = TypeAdapter(list[GlucoseReading]).validate_python(result.data)
 
         result = (
             self.client.table("meals")
@@ -72,9 +67,7 @@ class GlucoseRepository:
             .execute()
         )
 
-        meals = TypeAdapter(
-            list[MealMarker]
-        ).validate_python(result.data)
+        meals = TypeAdapter(list[MealMarker]).validate_python(result.data)
 
         result = (
             self.client.table("insulin_events")
@@ -87,9 +80,9 @@ class GlucoseRepository:
         )
 
         # Database numeric values may arrive as numbers.
-        stored_injections = TypeAdapter(
-            list[StoredInsulinMarker]
-        ).validate_python(result.data)
+        stored_injections = TypeAdapter(list[StoredInsulinMarker]).validate_python(
+            result.data
+        )
 
         injections = [
             InsulinMarker(
@@ -100,9 +93,33 @@ class GlucoseRepository:
             for event in stored_injections
         ]
 
+        # Filter each kind by its occurrence time, independently of eating time.
+        activities = self.context_markers(
+            window, "activity_at", "id,name,activity_after,activity_at", ActivityMarker
+        )
+        notes = self.context_markers(
+            window, "notes_at", "id,name,notes,notes_at", NoteMarker
+        )
+
         return GlucoseSnapshot(
             window=window,
             readings=readings,
             meals=meals,
             injections=injections,
+            activities=activities,
+            notes=notes,
         )
+
+    def context_markers[Marker: BaseModel](
+        self, window: GlucoseWindow, time_column: str, columns: str, model: type[Marker]
+    ) -> list[Marker]:
+        result = (
+            self.client.table("meals")
+            .select(columns)
+            .eq("user_id", str(self.user_id))
+            .gte(time_column, window.window_start.isoformat())
+            .lte(time_column, window.window_end.isoformat())
+            .order(time_column)
+            .execute()
+        )
+        return [model.model_validate(row) for row in result.data]

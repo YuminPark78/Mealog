@@ -12,7 +12,7 @@ from mealog_api.schemas.meals import (
 
 MEAL_COLUMNS = (
     "id, user_id, name, carbohydrates_g, eaten_at, notes, created_at,"
-    "activity_after, fraction_consumed, context_updated_at"
+    "activity_after, activity_at, notes_at, fraction_consumed, context_updated_at"
 )
 
 

@@ -3,6 +3,8 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, Field
 
+from mealog_api.schemas.meals import ActivityLevel
+
 
 class SourceReading(BaseModel):
     measured_at: AwareDatetime
@@ -43,11 +45,27 @@ class InsulinMarker(BaseModel):
     injected_at: AwareDatetime
 
 
+class ActivityMarker(BaseModel):
+    id: UUID
+    name: str
+    activity_after: ActivityLevel
+    activity_at: AwareDatetime
+
+
+class NoteMarker(BaseModel):
+    id: UUID
+    name: str
+    notes: str
+    notes_at: AwareDatetime
+
+
 class GlucoseSnapshot(BaseModel):
     window: GlucoseWindow
     readings: list[GlucoseReading]
     meals: list[MealMarker]
     injections: list[InsulinMarker]
+    activities: list[ActivityMarker] = Field(default_factory=list)
+    notes: list[NoteMarker] = Field(default_factory=list)
 
 
 def assess_coverage(
@@ -59,11 +77,9 @@ def assess_coverage(
     if now < end + timedelta(minutes=10):
         return "pending"
 
-    points = sorted({
-        timestamp
-        for timestamp in measured_times
-        if start <= timestamp <= end
-    })
+    points = sorted(
+        {timestamp for timestamp in measured_times if start <= timestamp <= end}
+    )
 
     if not points:
         return "partial"

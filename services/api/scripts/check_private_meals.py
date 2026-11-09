@@ -158,7 +158,10 @@ def main():
         attempt = api.patch(
             f"/meals/{alice_meal['id']}/context",
             headers={"Authorization": f"Bearer {bob_token}"},
-            json={"notes": "Bob must not be able to write this"},
+            json={
+                "notes": "Bob must not be able to write this",
+                "notes_at": datetime.now(UTC).isoformat(),
+            },
         )
         assert attempt.status_code == 404, attempt.text
 

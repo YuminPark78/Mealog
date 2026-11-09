@@ -34,6 +34,14 @@ class MealCreate(BaseModel):
 
     notes: str | None = Field(default=None, max_length=2000)
 
+    notes_at: AwareDatetime | None = None
+
+    @model_validator(mode="after")
+    def note_time_requires_note(self) -> Self:
+        if self.notes_at is not None and not self.notes:
+            raise ValueError("A note occurrence time requires note text.")
+        return self
+
 
 class MealContextUpdate(BaseModel):
     """Optional changes to a meal's follow-up details"""
@@ -45,6 +53,8 @@ class MealContextUpdate(BaseModel):
 
     activity_after: ActivityLevel | None = None
 
+    activity_at: AwareDatetime | None = None
+
     fraction_consumed: float | None = Field(
         default=None,
         ge=0,
@@ -54,10 +64,27 @@ class MealContextUpdate(BaseModel):
 
     notes: str | None = Field(default=None, max_length=2000)
 
+    notes_at: AwareDatetime | None = None
+
     @model_validator(mode="after")
     def require_at_least_one_field(self) -> Self:
         if not self.model_fields_set:
             raise ValueError("Provide at least one context field.")
+        for value_field, time_field in (
+            ("activity_after", "activity_at"),
+            ("notes", "notes_at"),
+        ):
+            if self.model_fields_set.intersection({value_field, time_field}):
+                if not {value_field, time_field} <= self.model_fields_set:
+                    raise ValueError(
+                        f"Provide {value_field} and {time_field} together."
+                    )
+                value = getattr(self, value_field)
+                timestamp = getattr(self, time_field)
+                if (value is None or value == "") != (timestamp is None):
+                    raise ValueError(
+                        f"Set or clear {value_field} and {time_field} together."
+                    )
         return self
 
 
@@ -69,5 +96,6 @@ class MealRead(MealCreate):
     created_at: AwareDatetime
 
     activity_after: ActivityLevel | None = None
+    activity_at: AwareDatetime | None = None
     fraction_consumed: float | None = None
     context_updated_at: AwareDatetime | None = None

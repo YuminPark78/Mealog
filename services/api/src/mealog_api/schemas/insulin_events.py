@@ -32,7 +32,9 @@ class InsulinEventCreate(BaseModel):
         max_length=2000,
     )
 
+
 class InsulinEventRead(InsulinEventCreate):
     id: UUID
     user_id: UUID
     created_at: AwareDatetime
+    updated_at: AwareDatetime | None = None

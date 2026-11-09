@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 
 import { apiRequest } from "@/lib/api";
+import { fromLocalDateTime, toLocalDateTime } from "@/lib/datetime";
 import type { Meal } from "@/lib/meals";
 
 type InsulinEvent = {
@@ -19,16 +20,20 @@ type InsulinEvent = {
 type Props = {
     accessToken: string;
     meals: Meal[];
+    onSaved: () => void;
 };
 
 export default function InsulinEventsPanel({
     accessToken,
     meals,
+    onSaved,
 }: Props) {
     const [events, setEvents] = useState<InsulinEvent[]>([]);
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState("");
+    const [editing, setEditing] = useState<InsulinEvent | null>(null);
+    const [formVersion, setFormVersion] = useState(0);
 
     useEffect(() => {
         let active = true;
@@ -68,24 +73,25 @@ export default function InsulinEventsPanel({
 
         try {
             const saved = await apiRequest<InsulinEvent>(
-                "/insulin-events",
+                editing ? `/insulin-events/${editing.id}` : "/insulin-events",
                 accessToken,
                 {
-                    method: "POST",
+                    method: editing ? "PUT" : "POST",
                     body: JSON.stringify({
                         meal_id: mealId === "" ? null : mealId,
                         dose_units: String(values.get("dose_units")),
                         insulin_name: insulinName || null,
-                        injected_at: new Date(
+                        injected_at: fromLocalDateTime(
                             String(values.get("injected_at")),
-                        ).toISOString(),
+                            editing?.injected_at ?? null,
+                        ),
                         notes: notes || null,
                     }),
                 },
             );
 
             setEvents((current) =>
-                [saved, ...current]
+                [saved, ...current.filter((row) => row.id !== saved.id)]
                     .sort(
                         (a, b) =>
                             Date.parse(b.injected_at) - Date.parse(a.injected_at),
@@ -93,8 +99,10 @@ export default function InsulinEventsPanel({
                     .slice(0, 50),
             );
 
-            form.reset();
-            setMessage("Insulin event saved.");
+            setEditing(null);
+            setFormVersion((version) => version + 1);
+            onSaved();
+            setMessage(editing ? "Insulin event updated." : "Insulin event saved.");
         } catch (error) {
             setMessage(
                 error instanceof Error ? error.message : "Saving failed.",
@@ -109,12 +117,14 @@ export default function InsulinEventsPanel({
             <h2 className="text-xl font-semibold">Insulin events</h2>
             <p>Record insulin already administered.</p>
 
-            <form onSubmit={saveEvent}>
+            {editing && <p>Editing the event from {new Date(editing.injected_at).toLocaleString()}.</p>}
+            <form key={`${editing?.id ?? "new"}-${formVersion}`} onSubmit={saveEvent}>
                 <fieldset disabled={busy || loading} className="space-y-3">
                     <label className="block">
                         Actual dose — units
                         <input
                             name="dose_units"
+                            defaultValue={editing?.dose_units ?? ""}
                             type="number"
                             min="0.001"
                             max="99999.999"
@@ -128,7 +138,9 @@ export default function InsulinEventsPanel({
                         Administration time — your device&apos;s timezone
                         <input
                             name="injected_at"
+                            defaultValue={toLocalDateTime(editing?.injected_at ?? null)}
                             type="datetime-local"
+                            step="0.001"
                             required
                             className="block w-full rounded border p-2"
                         />
@@ -138,6 +150,7 @@ export default function InsulinEventsPanel({
                         Insulin name — optional
                         <input
                             name="insulin_name"
+                            defaultValue={editing?.insulin_name ?? ""}
                             maxLength={100}
                             className="block w-full rounded border p-2"
                         />
@@ -147,10 +160,13 @@ export default function InsulinEventsPanel({
                         Related meal — optional
                         <select
                             name="meal_id"
-                            defaultValue=""
+                            defaultValue={editing?.meal_id ?? ""}
                             className="block w-full rounded border p-2"
                         >
                             <option value="">Not linked to a meal</option>
+                            {editing?.meal_id && !meals.some((meal) => meal.id === editing.meal_id) && (
+                                <option value={editing.meal_id}>Previously linked meal</option>
+                            )}
                             {meals.map((meal) => (
                                 <option key={meal.id} value={meal.id}>
                                     {meal.name} — {new Date(meal.eaten_at).toLocaleString()}
@@ -163,14 +179,17 @@ export default function InsulinEventsPanel({
                         Notes — optional
                         <textarea
                             name="notes"
+                            defaultValue={editing?.notes ?? ""}
                             maxLength={2000}
                             className="block w-full rounded border p-2"
                         />
                     </label>
 
                     <button type="submit" className="rounded border px-4 py-2">
-                        {busy ? "Saving…" : "Save insulin event"}
+                        {busy ? "Saving…" : editing ? "Save changes" : "Save insulin event"}
                     </button>
+                    {editing && <button type="button" className="ml-3 underline"
+                        onClick={() => { setEditing(null); setMessage(""); }}>Cancel edit</button>}
                 </fieldset>
             </form>
 
@@ -198,6 +217,10 @@ export default function InsulinEventsPanel({
                                         : "Not linked to a meal"}
                                 </p>
                                 {event.notes && <p>{event.notes}</p>}
+                                <button type="button" disabled={busy} className="underline"
+                                    onClick={() => { setEditing(event); setMessage(""); }}>
+                                    Edit event
+                                </button>
                             </li>
                         );
                     })}
