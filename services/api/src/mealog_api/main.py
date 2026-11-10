@@ -10,6 +10,7 @@ from mealog_api.config import settings
 from mealog_api.routes.insulin_events import router as insulin_events_router
 from mealog_api.routes.meals import router as meals_router
 from mealog_api.routes.glucose import router as glucose_router
+from mealog_api.routes.meal_estimates import router as meal_estimates_router
 
 
 class ConnectionCheck(BaseModel):
@@ -23,6 +24,7 @@ app = FastAPI(title="Mealog API")
 app.include_router(meals_router)
 app.include_router(insulin_events_router)
 app.include_router(glucose_router)
+app.include_router(meal_estimates_router)
 
 app.add_middleware(
     CORSMiddleware,

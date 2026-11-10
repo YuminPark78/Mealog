@@ -7,6 +7,7 @@ import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { apiRequest } from "@/lib/api";
 import type { Meal } from "@/lib/meals";
 import MealContextForm from "@/components/meals/meal-context-form";
+import MealCreateForm from "@/components/meals/meal-create-form";
 import InsulinEventsPanel from "@/components/insulin/insulin-events-panel";
 import MealGlucoseChart from "@/components/glucose/meal-glucose-chart";
 
@@ -171,44 +172,17 @@ function PrivateMeals({ session }: { session: Session }) {
         };
     }, [token]);
 
-    async function saveMeal(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
+    function addSavedMeal(saved: Meal) {
+        setMeals((current) =>
+            [saved, ...current]
+                .sort(
+                    (a, b) =>
+                        Date.parse(b.eaten_at) - Date.parse(a.eaten_at),
+                )
+                .slice(0, 50),
+        );
 
-        const form = event.currentTarget;
-        const values = new FormData(form);
-        const carbs = String(values.get("carbohydrates_g")).trim();
-
-        setBusy(true);
-        setMessage("");
-
-        try {
-            const saved = await apiRequest<Meal>("/meals", token, {
-                method: "POST",
-                body: JSON.stringify({
-                    name: String(values.get("name")),
-                    carbohydrates_g: carbs === "" ? null : Number(carbs),
-                    eaten_at: new Date(
-                        String(values.get("eaten_at")),
-                    ).toISOString(),
-                    notes: null,
-                }),
-            });
-
-            setMeals((current) =>
-                [saved, ...current]
-                    .sort(
-                        (a, b) => Date.parse(b.eaten_at) - Date.parse(a.eaten_at),
-                    )
-                    .slice(0, 50),
-            );
-
-            form.reset();
-            setMessage("Meal saved.");
-        } catch (error) {
-            setMessage(errorMessage(error));
-        } finally {
-            setBusy(false);
-        }
+        setTimelineVersion((version) => version + 1);
     }
 
     async function logOut() {
@@ -247,45 +221,11 @@ function PrivateMeals({ session }: { session: Session }) {
                 </button>
             </div>
 
-            <form onSubmit={saveMeal}>
-                <fieldset disabled={busy || loading} className="space-y-3">
-                    <label className="block">
-                        Meal name
-                        <input
-                            name="name"
-                            required
-                            maxLength={200}
-                            className="block w-full rounded border p-2"
-                        />
-                    </label>
-
-                    <label className="block">
-                        Estimated carbohydrates in the full serving — optional
-                        <input
-                            name="carbohydrates_g"
-                            type="number"
-                            min="0"
-                            max="999999.99"
-                            step="0.01"
-                            className="block w-full rounded border p-2"
-                        />
-                    </label>
-
-                    <label className="block">
-                        Eating time — your device&apos;s timezone
-                        <input
-                            name="eaten_at"
-                            type="datetime-local"
-                            required
-                            className="block w-full rounded border p-2"
-                        />
-                    </label>
-
-                    <button type="submit" className="rounded border px-4 py-2">
-                        {busy ? "Please wait…" : "Save meal"}
-                    </button>
-                </fieldset>
-            </form>
+            <MealCreateForm
+                accessToken={token}
+                disabled={loading}
+                onSaved={addSavedMeal}
+            />
 
             <p role="status">{message}</p>
 
