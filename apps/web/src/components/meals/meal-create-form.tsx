@@ -71,6 +71,9 @@ export default function MealCreateForm({
 }: Props) {
     const [name, setName] = useState("");
     const [carbs, setCarbs] = useState("");
+    const [picturedCarbs, setPicturedCarbs] = useState<number | null>(null);
+    const [photoShare, setPhotoShare] = useState("1");
+    const [fractionConsumed, setFractionConsumed] = useState("");
     const [eatenAt, setEatenAt] = useState("");
 
     const [photo, setPhoto] = useState<File | null>(null);
@@ -105,6 +108,8 @@ export default function MealCreateForm({
 
         setPhoto(null);
         setPreview("");
+        setPicturedCarbs(null);
+        setPhotoShare("1");
         setFileVersion((version) => version + 1);
     }
 
@@ -167,6 +172,9 @@ export default function MealCreateForm({
 
             if (result.status !== "not_food") {
                 setName(result.name ?? "");
+                setPicturedCarbs(result.carbohydrates_g);
+                setPhotoShare("1");
+
                 setCarbs(
                     result.carbohydrates_g === null
                         ? ""
@@ -211,6 +219,10 @@ export default function MealCreateForm({
                     body: JSON.stringify({
                         name: name.trim(),
                         carbohydrates_g: carbs === "" ? null : Number(carbs),
+                        fraction_consumed:
+                            fractionConsumed === ""
+                                ? null
+                                : Number(fractionConsumed),
                         eaten_at: new Date(eatenAt).toISOString(),
                         notes: null,
                     }),
@@ -227,6 +239,7 @@ export default function MealCreateForm({
 
             setName("");
             setCarbs("");
+            setFractionConsumed("");
             setEatenAt("");
             setContext("");
             setDraft(null);
@@ -356,8 +369,42 @@ export default function MealCreateForm({
                         />
                     </label>
 
+                    {picturedCarbs !== null && (
+                        <label className="block">
+                            My share of the pictured food
+                            <select
+                                value={photoShare}
+                                onChange={(event) => {
+                                    const share = event.target.value;
+                                    setPhotoShare(share);
+
+                                    setCarbs(
+                                        String(
+                                            Math.round(
+                                                picturedCarbs * Number(share) * 100,
+                                            ) / 100,
+                                        ),
+                                    );
+                                }}
+                                className="block w-full rounded border p-2"
+                            >
+                                <option value="1">All pictured food</option>
+                                <option value="0.75">Three quarters</option>
+                                <option value="0.5">Half</option>
+                                <option value="0.3333333333">One third</option>
+                                <option value="0.25">One quarter</option>
+                                <option value="0.2">One fifth</option>
+                            </select>
+
+                            <span className="block text-sm">
+                                Changing this recalculates the suggested carbohydrates.
+                                You can still correct the amount below.
+                            </span>
+                        </label>
+                    )}
+
                     <label className="block">
-                        Estimated carbohydrates in the full serving — optional
+                        Carbohydrates in my full serving — optional
                         <input
                             name="carbohydrates_g"
                             value={carbs}
@@ -368,6 +415,22 @@ export default function MealCreateForm({
                             step="0.01"
                             className="block w-full rounded border p-2"
                         />
+                    </label>
+
+                    <label className="block">
+                        How much of my serving did I actually eat?
+                        <select
+                            value={fractionConsumed}
+                            onChange={(event) => setFractionConsumed(event.target.value)}
+                            className="block w-full rounded border p-2"
+                        >
+                            <option value="">Unknown / not recorded yet</option>
+                            <option value="1">All</option>
+                            <option value="0.75">Three quarters</option>
+                            <option value="0.5">Half</option>
+                            <option value="0.25">One quarter</option>
+                            <option value="0">None</option>
+                        </select>
                     </label>
 
                     <label className="block">

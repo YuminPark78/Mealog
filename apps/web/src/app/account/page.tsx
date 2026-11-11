@@ -9,7 +9,8 @@ import type { Meal } from "@/lib/meals";
 import MealContextForm from "@/components/meals/meal-context-form";
 import MealCreateForm from "@/components/meals/meal-create-form";
 import InsulinEventsPanel from "@/components/insulin/insulin-events-panel";
-import MealGlucoseChart from "@/components/glucose/meal-glucose-chart";
+// import MealGlucoseChart from "@/components/glucose/meal-glucose-chart";
+import MealComparisonPanel from "@/components/glucose/meal-comparison-panel";
 
 function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : "Something went wrong.";
@@ -150,6 +151,7 @@ function PrivateMeals({ session }: { session: Session }) {
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState("");
+    const [newestMealId, setNewestMealId] = useState<string | null>(null);
 
     const token = session.access_token;
 
@@ -183,6 +185,7 @@ function PrivateMeals({ session }: { session: Session }) {
         );
 
         setTimelineVersion((version) => version + 1);
+        setNewestMealId(saved.id);
     }
 
     async function logOut() {
@@ -254,10 +257,11 @@ function PrivateMeals({ session }: { session: Session }) {
                                     onSaved={replaceMeal}
                                 />
 
-                                <MealGlucoseChart
-                                    key={`${meal.id}-${timelineVersion}`}
-                                    mealId={meal.id}
+                                <MealComparisonPanel
+                                    meal={meal}
                                     accessToken={token}
+                                    revision={timelineVersion}
+                                    autoOpen={meal.id === newestMealId}
                                 />
                             </li>
                         ))}

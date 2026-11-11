@@ -15,7 +15,7 @@ import {
 import { apiRequest } from "@/lib/api";
 import { ACTIVITY_OPTIONS, type ActivityLevel } from "@/lib/meals";
 
-type Snapshot = {
+export type Snapshot = {
     window: {
         meal_time: string;
         status: string;
@@ -147,71 +147,71 @@ export default function MealGlucoseChart({
                     {snapshot.readings.length === 0 ? (
                         <p>No readings collected for this window yet.</p>
                     ) : null}
-                        <div style={{ width: "100%", height: 320 }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={points} margin={{ top: 12, right: 16, bottom: 24, left: 8 }}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis
-                                        dataKey="minute"
-                                        type="number"
-                                        allowDataOverflow
-                                        domain={[-120, 120]}
-                                        ticks={[-120, -60, 0, 60, 120]}
-                                        label={{
-                                            value: "Minutes relative to eating",
-                                            position: "insideBottom",
-                                            offset: -15,
-                                        }}
-                                    />
-                                    <YAxis
-                                        hide={!hasGlucose}
-                                        allowDataOverflow={!hasGlucose}
-                                        domain={hasGlucose ? [0, "auto"] : [0, 1]}
-                                        label={{
-                                            value: "mg/dL",
-                                            angle: -90,
-                                            position: "insideLeft",
-                                        }}
-                                    />
-                                    <Tooltip />
-                                    <Line
-                                        type="linear"
-                                        dataKey="glucose"
-                                        stroke="#2563eb"
-                                        dot={false}
-                                        connectNulls={false}
-                                        isAnimationActive={false}
-                                    />
+                    <div style={{ width: "100%", height: 320 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={points} margin={{ top: 12, right: 16, bottom: 24, left: 8 }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis
+                                    dataKey="minute"
+                                    type="number"
+                                    allowDataOverflow
+                                    domain={[-120, 120]}
+                                    ticks={[-120, -60, 0, 60, 120]}
+                                    label={{
+                                        value: "Minutes relative to eating",
+                                        position: "insideBottom",
+                                        offset: -15,
+                                    }}
+                                />
+                                <YAxis
+                                    hide={!hasGlucose}
+                                    allowDataOverflow={!hasGlucose}
+                                    domain={hasGlucose ? [0, "auto"] : [0, 1]}
+                                    label={{
+                                        value: "mg/dL",
+                                        angle: -90,
+                                        position: "insideLeft",
+                                    }}
+                                />
+                                <Tooltip />
+                                <Line
+                                    type="linear"
+                                    dataKey="glucose"
+                                    stroke="#2563eb"
+                                    dot={false}
+                                    connectNulls={false}
+                                    isAnimationActive={false}
+                                />
 
-                                    {snapshot.meals.map((meal) => (
-                                        <ReferenceLine
-                                            key={meal.id}
-                                            x={relativeMinutes(meal.eaten_at)}
-                                            stroke="#64748b"
-                                        />
-                                    ))}
+                                {snapshot.meals.map((meal) => (
+                                    <ReferenceLine
+                                        key={meal.id}
+                                        x={relativeMinutes(meal.eaten_at)}
+                                        stroke="#64748b"
+                                    />
+                                ))}
 
-                                    {snapshot.injections.map((event) => (
-                                        <ReferenceLine
-                                            key={event.id}
-                                            x={relativeMinutes(event.injected_at)}
-                                            stroke="#9333ea"
-                                            strokeDasharray="4 4"
-                                        />
-                                    ))}
-                                    {snapshot.activities.map((event) => (
-                                        <ReferenceLine key={`activity-${event.id}`}
-                                            x={relativeMinutes(event.activity_at)} stroke="#15803d"
-                                            strokeDasharray="2 2" />
-                                    ))}
-                                    {snapshot.notes.map((event) => (
-                                        <ReferenceLine key={`note-${event.id}`}
-                                            x={relativeMinutes(event.notes_at)} stroke="#b45309"
-                                            strokeDasharray="2 4" />
-                                    ))}
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </div>
+                                {snapshot.injections.map((event) => (
+                                    <ReferenceLine
+                                        key={event.id}
+                                        x={relativeMinutes(event.injected_at)}
+                                        stroke="#9333ea"
+                                        strokeDasharray="4 4"
+                                    />
+                                ))}
+                                {snapshot.activities.map((event) => (
+                                    <ReferenceLine key={`activity-${event.id}`}
+                                        x={relativeMinutes(event.activity_at)} stroke="#15803d"
+                                        strokeDasharray="2 2" />
+                                ))}
+                                {snapshot.notes.map((event) => (
+                                    <ReferenceLine key={`note-${event.id}`}
+                                        x={relativeMinutes(event.notes_at)} stroke="#b45309"
+                                        strokeDasharray="2 4" />
+                                ))}
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
 
                     <p className="text-sm">Blue: glucose · Gray: meals · Purple: insulin · Green: activity · Amber: notes</p>
                     <ol aria-label="Timeline events" className="space-y-2 text-sm">

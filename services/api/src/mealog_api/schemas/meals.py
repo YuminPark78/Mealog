@@ -30,6 +30,13 @@ class MealCreate(BaseModel):
         allow_inf_nan=False,
     )
 
+    fraction_consumed: float | None = Field(
+        default=None,
+        ge=0,
+        le=1,
+        allow_inf_nan=False,
+    )
+
     eaten_at: AwareDatetime
 
     notes: str | None = Field(default=None, max_length=2000)
@@ -97,5 +104,4 @@ class MealRead(MealCreate):
 
     activity_after: ActivityLevel | None = None
     activity_at: AwareDatetime | None = None
-    fraction_consumed: float | None = None
     context_updated_at: AwareDatetime | None = None
