@@ -1,0 +1,151 @@
+.screen {
+    --welcome-background: #F2EDE3;
+    --welcome-foreground: #232729;
+
+    position: relative;
+    display: grid;
+    place-items: center;
+
+    /* Fallback, followed by a mobile-browser-aware viewport height. */
+    min-height: 100vh;
+    min-height: 100svh;
+
+    padding: 24px;
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+
+    background: var(--welcome-background);
+    color: var(--welcome-foreground);
+    font-family: var(--font-geist-sans), sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+    .screen {
+        --welcome-background: #232729;
+        --welcome-foreground: #f2ede3;
+    }
+}
+
+.brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 320px;
+    text-align: center;
+}
+
+.logo {
+    display: block;
+
+    /* Flexible size: 128px minimum, 176px maximum. */
+    width: clamp(128px, 38vw, 176px);
+    height: auto;
+    overflow: visible;
+}
+
+.panel {
+    /* Each shape unfolds around its own left edge. */
+    transform-box: fill-box;
+    transform-origin: left center;
+}
+
+.wordmark {
+    margin: 16px 0 0;
+    font-size: clamp(32px, 8vw, 42px);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.045em;
+}
+
+.tagline {
+    margin: 12px 0 0;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #587163;
+}
+
+/* Animations only begin when React adds the playing class. */
+
+.playing .panel {
+    animation: unfold 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.playing .panelOne {
+    animation-delay: 0ms;
+}
+
+.playing .panelTwo {
+    animation-delay: 140ms;
+}
+
+.playing .panelThree {
+    animation-delay: 280ms;
+}
+
+.playing .wordmark {
+    animation: reveal 380ms ease-out 520ms both;
+}
+
+.playing .tagline {
+    animation: reveal 380ms ease-out 680ms both;
+}
+
+@keyframes unfold {
+    from {
+        opacity: 0;
+        transform: translateY(14px) skewY(-12deg) scaleX(0.04);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) skewY(0deg) scaleX(1);
+    }
+}
+
+@keyframes reveal {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.continueLink {
+    position: absolute;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 44px;
+    padding: 10px 16px;
+    border-radius: 999px;
+
+    color: inherit;
+    font-size: 14px;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    white-space: nowrap;
+}
+
+.continueLink:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
+}
+
+/* Honour the user's device accessibility preference. */
+@media (prefers-reduced-motion: reduce) {
+
+    .playing .panel,
+    .playing .wordmark,
+    .playing .tagline {
+        animation: none;
+    }
+}

@@ -1,0 +1,90 @@
+/* MEAL: soft, overlapping fades. */
+.playing .letter {
+    animation: letterAppear 650ms ease-in-out both;
+}
+
+.playing .m {
+    animation-delay: 0ms;
+}
+
+.playing .e {
+    animation-delay: 80ms;
+}
+
+.playing .a {
+    animation-delay: 160ms;
+}
+
+.playing .l {
+    animation-delay: 240ms;
+}
+
+/* Fade only—no downward movement. */
+.playing .rails,
+.playing .topBox,
+.playing .middleBox,
+.playing .bottomBox {
+    animation: frameAppear 650ms ease-in-out both;
+}
+
+.playing .rails,
+.playing .topBox {
+    animation-delay: 750ms;
+}
+
+.playing .middleBox {
+    animation-delay: 900ms;
+}
+
+.playing .bottomBox {
+    animation-delay: 1050ms;
+}
+
+@keyframes frameAppear {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.playing .o {
+    animation-delay: 1100ms;
+}
+
+.playing .g {
+    animation-delay: 1220ms;
+}
+
+@keyframes letterAppear {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes frameAppear {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .playing .letter,
+    .playing .rails,
+    .playing .topBox,
+    .playing .middleBox,
+    .playing .bottomBox {
+        animation: none;
+    }
+}
