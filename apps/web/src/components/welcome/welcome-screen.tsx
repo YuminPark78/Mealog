@@ -9,7 +9,7 @@ import AnimatedMealogLogo from "./animated-mealog-logo";
 
 const SESSION_KEY = "mealog:welcome-seen:v1";
 const ANIMATION_DURATION_MS = 2800;
-const DESTINATION = "/account";
+const DESTINATION = "/login";
 
 type WelcomeScreenProps = {
     // Enable temporarily while adjusting the animation.
