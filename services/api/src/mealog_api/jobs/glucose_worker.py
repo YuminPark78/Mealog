@@ -89,6 +89,14 @@ def process_one(fetcher=fetch_recent, *, meal_id=None) -> bool:
         if job is None:
             return False
 
+        acquired = db.execute(
+            "select pg_try_advisory_xact_lock(hashtextextended(%s, 0)) as acquired",
+            (str(job["user_id"]),),
+        ).fetchone()
+
+        if acquired is None or not acquired["acquired"]:
+            return False
+
         now = datetime.now(UTC)
 
         connection = db.execute(

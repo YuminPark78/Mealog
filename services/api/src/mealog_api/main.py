@@ -12,6 +12,7 @@ from mealog_api.routes.meals import router as meals_router
 from mealog_api.routes.glucose import router as glucose_router
 from mealog_api.routes.meal_estimates import router as meal_estimates_router
 from mealog_api.routes.similar_meals import router as similar_meals_router
+from mealog_api.routes.account import router as account_router
 
 
 class ConnectionCheck(BaseModel):
@@ -27,6 +28,7 @@ app.include_router(insulin_events_router)
 app.include_router(glucose_router)
 app.include_router(meal_estimates_router)
 app.include_router(similar_meals_router)
+app.include_router(account_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -34,7 +36,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ],
-    allow_methods=["GET", "POST", "PATCH", "PUT"],
+    allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
