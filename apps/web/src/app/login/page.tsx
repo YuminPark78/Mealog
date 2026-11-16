@@ -31,7 +31,7 @@ export default function LoginPage() {
           if (!active) return;
 
           if (session) {
-            router.replace("/account");
+            router.replace("/home");
           } else {
             setChecking(false);
           }

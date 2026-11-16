@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { AppNavigation } from "@/components/layout/app-navigation";
+import frame from "@/components/layout/app-frame.module.css";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
@@ -45,8 +47,14 @@ export function AccountSettings() {
     return () => { active = false; unsubscribe?.(); };
   }, [router]);
 
-  if (error) return <main className="p-6"><p role="alert">{error}</p><Link href="/login">Back to login</Link></main>;
-  if (!session) return <main className="p-6"><p role="status">Checking your session…</p></main>;
+  if (error || !session) return (
+    <main className={frame.page}>
+      <div className={frame.navigation}><AppNavigation active="account" /></div>
+      <div className={frame.container}>
+        {error ? <><p role="alert">{error}</p><Link href="/login">Back to login</Link></> : <p role="status">Checking your session…</p>}
+      </div>
+    </main>
+  );
   return <AccountDetails key={session.user.id} session={session} />;
 }
 
@@ -93,12 +101,9 @@ function AccountDetails({ session }: { session: Session }) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl space-y-6 px-5 py-8">
-      <nav aria-label="Main navigation" className="flex gap-5 text-sm">
-        <Link href="/home" className="underline underline-offset-4">Home</Link>
-        <Link href="/account" aria-current="page" className="font-semibold">Account</Link>
-      </nav>
-      <header><h1 className="text-2xl font-semibold">Your account</h1><p className="mt-2 text-sm text-muted-foreground">Manage your details and Dexcom connection.</p></header>
+    <main className={frame.page}>
+      <div className={frame.navigation}><AppNavigation active="account" /></div>
+      <div className={`${frame.container} space-y-6`}>
 
       <Card>
         <CardHeader><CardTitle>Account details</CardTitle></CardHeader>
@@ -135,6 +140,7 @@ function AccountDetails({ session }: { session: Session }) {
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         </CardContent>
       </Card>
+      </div>
     </main>
   );
 }

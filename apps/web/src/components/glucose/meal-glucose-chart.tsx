@@ -141,7 +141,7 @@ export default function MealGlucoseChart({
                     <p>Status: {snapshot.window.status}</p>
 
                     {snapshot.window.status === "awaiting_connection" && (
-                        <p>Connect Dexcom using the local setup script.</p>
+                        <p>Connect Dexcom in Account to collect readings.</p>
                     )}
 
                     {snapshot.readings.length === 0 ? (

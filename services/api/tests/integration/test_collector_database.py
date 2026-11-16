@@ -83,6 +83,48 @@ def count(db, meal_id):
     ).fetchone()["n"]
 
 
+def test_creation_request_uniqueness_is_per_owner_and_does_not_requeue(case):
+    db, _, user_id, other_id, _ = case
+    request_id = uuid4()
+    created = db.execute(
+        """insert into public.meals (user_id, name, eaten_at, creation_request_id, creation_request_hash)
+           values (%s, 'Idempotency fixture', now(), %s, 'fixture') returning id""",
+        (user_id, request_id),
+    ).fetchone()["id"]
+    with pytest.raises(psycopg.errors.UniqueViolation):
+        with db.transaction():
+            db.execute(
+                """insert into public.meals (user_id, name, eaten_at, creation_request_id)
+                   values (%s, 'Duplicate', now(), %s)""",
+                (user_id, request_id),
+            )
+    assert db.execute("select count(*) as n from mealog_private.glucose_jobs where meal_id = %s", (created,)).fetchone()["n"] == 2
+    db.execute(
+        """insert into public.meals (user_id, name, eaten_at, creation_request_id)
+           values (%s, 'Other owner', now(), %s)""", (other_id, request_id),
+    )
+    db.execute("set local role authenticated")
+    db.execute("select set_config('request.jwt.claim.sub', %s, true)", (str(other_id),))
+    assert not db.execute("select id from public.meals where id = %s", (created,)).fetchall()
+    db.execute("reset role")
+
+
+def test_insulin_creation_request_uniqueness(case):
+    db, meal_id, user_id, _, _ = case
+    request_id = uuid4()
+    db.execute(
+        """insert into public.insulin_events (user_id, meal_id, dose_units, injected_at, creation_request_id)
+           values (%s, %s, 1.25, now(), %s)""", (user_id, meal_id, request_id),
+    )
+    with pytest.raises(psycopg.errors.UniqueViolation):
+        with db.transaction():
+            db.execute(
+                """insert into public.insulin_events (user_id, meal_id, dose_units, injected_at, creation_request_id)
+                   values (%s, %s, 1.25, now(), %s)""", (user_id, meal_id, request_id),
+            )
+    assert db.execute("select count(*) as n from public.insulin_events where user_id = %s and creation_request_id = %s", (user_id, request_id)).fetchone()["n"] == 1
+
+
 def requeue(db, meal_id, *, attempts=0, kind="initial"):
     db.execute(
         "update mealog_private.glucose_jobs set done = true where meal_id = %s",

@@ -4,7 +4,8 @@ import logging
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from mealog_api.repositories.creation_requests import CreationRequestConflict
 
 from mealog_api.dependencies import get_meals_service
 from mealog_api.schemas.meals import (
@@ -28,9 +29,12 @@ MealsServiceDependency = Annotated[
 def create_meal(
     meal: MealCreate,
     service: MealsServiceDependency,
+    idempotency_key: Annotated[UUID | None, Header()] = None,
 ):
     try:
-        return service.create(meal)
+        return service.create(meal, idempotency_key) if idempotency_key else service.create(meal)
+    except CreationRequestConflict:
+        raise HTTPException(409, "This submission was already used for a different meal.") from None
     except Exception:
         logger.exception("Failed to save meal")
         raise HTTPException(
@@ -72,3 +76,14 @@ def update_meal_context(
         raise HTTPException(status_code=404, detail="Meal not found.")
 
     return updated
+
+
+@router.get("/{meal_id}", response_model=MealRead)
+def get_meal(meal_id: UUID, service: MealsServiceDependency):
+    try:
+        meal = service.get(meal_id)
+    except Exception:
+        raise HTTPException(503, "Could not retrieve the meal.") from None
+    if meal is None:
+        raise HTTPException(404, "Meal not found.")
+    return meal

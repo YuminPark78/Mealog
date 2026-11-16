@@ -405,7 +405,7 @@ def find_similar_meals(
         # Require at least one usable sample in the displayed interval.
         usable = any(
             not reading.conflict_detected
-            and -30 <= (
+            and -60 <= (
                 reading.measured_at - candidate.eaten_at
             ).total_seconds() / 60 <= 120
             for reading in snapshot.readings

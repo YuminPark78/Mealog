@@ -1,3 +1,22 @@
+.headerGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+
+@media (min-width: 640px) {
+  .headerGrid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px 24px;
+  }
+  .headerGrid > :nth-child(2),
+  .headerGrid > :nth-child(4) {
+    justify-self: end;
+    text-align: right;
+  }
+}
+
 .reveal {
   display: grid;
   grid-template-rows: 0fr;

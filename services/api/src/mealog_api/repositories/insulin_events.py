@@ -2,6 +2,7 @@ from uuid import UUID
 
 from pydantic import TypeAdapter
 from supabase import Client
+from mealog_api.repositories.creation_requests import insert_once, public_record
 
 from mealog_api.schemas.insulin_events import (
     InsulinEventCreate,
@@ -26,7 +27,9 @@ class InsulinEventsRepository:
             .eq("user_id", str(self.user_id))
             .execute()
         )
-        rows = TypeAdapter(list[InsulinEventRead]).validate_python(result.data)
+        rows = TypeAdapter(list[InsulinEventRead]).validate_python(
+            [public_record(row) for row in result.data]
+        )
         if not rows:
             return None
         if len(rows) != 1:
@@ -45,13 +48,13 @@ class InsulinEventsRepository:
 
         return bool(result.data)
 
-    def create(self, event: InsulinEventCreate) -> InsulinEventRead:
+    def create(self, event: InsulinEventCreate, request_id: UUID | None = None) -> InsulinEventRead:
         payload = event.model_dump(mode="json")
         payload["user_id"] = str(self.user_id)
 
-        result = self.client.table("insulin_events").insert(payload).execute()
-
-        rows = TypeAdapter(list[InsulinEventRead]).validate_python(result.data)
+        rows = TypeAdapter(list[InsulinEventRead]).validate_python(
+            insert_once(self.client, "insulin_events", payload, request_id)
+        )
 
         if len(rows) != 1:
             raise RuntimeError("Expected one saved insulin event.")

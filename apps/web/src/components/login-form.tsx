@@ -67,7 +67,7 @@ export function LoginForm({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/account`,
+            emailRedirectTo: `${window.location.origin}/home`,
           },
         })
         : await supabase.auth.signInWithPassword({
@@ -80,7 +80,7 @@ export function LoginForm({
       }
 
       if (result.data.session) {
-        router.replace("/account");
+        router.replace("/home");
         return;
       }
 
@@ -116,7 +116,7 @@ export function LoginForm({
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/account`,
+          redirectTo: `${window.location.origin}/home`,
           skipBrowserRedirect: true,
         },
       });

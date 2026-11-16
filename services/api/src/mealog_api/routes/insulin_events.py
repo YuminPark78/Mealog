@@ -2,7 +2,8 @@ import logging
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from mealog_api.repositories.creation_requests import CreationRequestConflict
 from supabase import PostgrestAPIError
 
 from mealog_api.dependencies import get_insulin_events_service
@@ -66,9 +67,12 @@ def update_insulin_event(
 def create_insulin_event(
     event: InsulinEventCreate,
     service: ServiceDependency,
+    idempotency_key: Annotated[UUID | None, Header()] = None,
 ):
     try:
-        return service.create(event)
+        return service.create(event, idempotency_key) if idempotency_key else service.create(event)
+    except CreationRequestConflict:
+        raise HTTPException(409, "This submission was already used for a different insulin event.") from None
     except LinkedMealNotFoundError:
         raise HTTPException(
             status_code=404,

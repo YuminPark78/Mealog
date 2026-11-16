@@ -193,7 +193,7 @@ export function ResetPasswordForm() {
                                 </p>
 
                                 <FieldDescription className="text-center">
-                                    <Link href="/account" prefetch={false}>
+                                    <Link href="/home" prefetch={false}>
                                         Continue to Mealog
                                     </Link>
                                 </FieldDescription>

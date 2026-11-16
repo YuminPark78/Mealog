@@ -28,7 +28,7 @@ class InsulinEventsService:
         )
         return self.repository.update(event_id, normalized)
 
-    def create(self, event: InsulinEventCreate) -> InsulinEventRead:
+    def create(self, event: InsulinEventCreate, request_id: UUID | None = None) -> InsulinEventRead:
         if event.meal_id is not None and not self.repository.owns_meal(event.meal_id):
             raise LinkedMealNotFoundError
 
@@ -38,6 +38,8 @@ class InsulinEventsService:
             }
         )
 
+        if request_id is not None:
+            return self.repository.create(normalized, request_id)
         return self.repository.create(normalized)
 
     def list_recent(

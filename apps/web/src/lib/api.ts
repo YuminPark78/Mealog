@@ -1,3 +1,10 @@
+export class ApiError extends Error {
+    constructor(message: string, public status: number) {
+        super(message);
+        this.name = "ApiError";
+    }
+}
+
 export async function apiRequest<T>(
     path: string,
     accessToken: string,
@@ -31,7 +38,7 @@ export async function apiRequest<T>(
                 ? body.detail
                 : `Request failed: HTTP ${response.status}`;
 
-        throw new Error(detail);
+        throw new ApiError(detail, response.status);
     }
 
     return body as T;

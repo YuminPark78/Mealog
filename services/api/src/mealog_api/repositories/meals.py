@@ -3,6 +3,7 @@ from uuid import UUID
 
 from pydantic import TypeAdapter
 from supabase import Client
+from mealog_api.repositories.creation_requests import insert_once, public_record
 
 from mealog_api.schemas.meals import (
     MealContextUpdate,
@@ -21,19 +22,25 @@ class MealsRepository:
         self.client = client
         self.user_id = user_id
 
-    def create(self, meal: MealCreate) -> MealRead:
+    def create(self, meal: MealCreate, request_id: UUID | None = None) -> MealRead:
         payload = meal.model_dump(mode="json")
 
         payload["user_id"] = str(self.user_id)
 
-        result = self.client.table("meals").insert(payload).execute()
-
-        rows = TypeAdapter(list[MealRead]).validate_python(result.data)
+        rows = TypeAdapter(list[MealRead]).validate_python(
+            insert_once(self.client, "meals", payload, request_id)
+        )
 
         if len(rows) != 1:
             raise RuntimeError("Expected one saved meal.")
 
         return rows[0]
+
+    def get(self, meal_id: UUID) -> MealRead | None:
+        rows = (self.client.table("meals").select(MEAL_COLUMNS)
+                .eq("id", str(meal_id)).eq("user_id", str(self.user_id))
+                .limit(1).execute().data)
+        return MealRead.model_validate(rows[0]) if rows else None
 
     def list_recent(self, limit: int) -> list[MealRead]:
         result = (
@@ -63,7 +70,9 @@ class MealsRepository:
             .execute()
         )
 
-        rows = TypeAdapter(list[MealRead]).validate_python(result.data)
+        rows = TypeAdapter(list[MealRead]).validate_python(
+            [public_record(row) for row in result.data]
+        )
 
         if not rows:
             return None

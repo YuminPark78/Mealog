@@ -1,0 +1,71 @@
+.page {
+  --glass-surface: color-mix(in srgb, var(--card) 80%, transparent);
+  --glass-border: color-mix(in srgb, var(--card) 65%, var(--border));
+  --glass-highlight: color-mix(in srgb, var(--card) 52%, transparent);
+  --glass-shadow: 0 12px 40px #2327290a, inset 0 1px 0 var(--glass-highlight);
+  padding: max(8px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom));
+  background:
+    radial-gradient(ellipse at 100% 0%, #f6746e26, transparent 55%),
+    radial-gradient(ellipse at 0% 65%, #92b9a52b, transparent 60%),
+    radial-gradient(ellipse at 85% 100%, #d6b88626, transparent 50%),
+    var(--background);
+  color: var(--foreground);
+}
+
+.page :global([data-slot="card"]) {
+  background: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  --tw-ring-shadow: 0 0 #0000;
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  backdrop-filter: blur(24px) saturate(1.2);
+}
+
+.container {
+  width: 100%;
+  max-width: 680px;
+  min-width: 0;
+  margin-inline: auto;
+}
+
+.navigation {
+  composes: container;
+  padding-block: 4px 12px;
+}
+
+.navigationBar {
+  display: flex;
+  width: fit-content;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: var(--glass-surface);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
+  font-size: 14px;
+}
+
+.navigationLink {
+  display: inline-grid;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  transition: background 200ms ease, box-shadow 200ms ease;
+}
+.navigationLink:hover { background: var(--glass-highlight); }
+.navigationLink[aria-current="page"] {
+  background: var(--card);
+  box-shadow: 0 2px 8px #2327290d, inset 0 1px 0 var(--glass-highlight);
+}
+.navigationLink:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) { .navigationLink { transition: none; } }
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+  .page { --glass-surface: var(--card); --glass-highlight: var(--card); --glass-border: var(--border); background: var(--background); }
+  .page :global([data-slot="card"]), .navigationBar { -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
