@@ -23,5 +23,12 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    cors_origins: list[str] = Field(
+        default_factory=lambda: [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ],
+    )
+
 
 settings = Settings()
