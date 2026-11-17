@@ -12,14 +12,14 @@ export function HistoricalGlucoseChart({ history, selected, current }: { history
   const series = useMemo(() => history?.matches.map((match, index) => ({
     id: match.meal.id, name: match.meal.name, points: curvePoints(match.snapshot).filter((p) => p.minute >= -60 && p.minute <= 120), color: HISTORY_COLORS[index % HISTORY_COLORS.length],
   })) ?? [], [history]);
-  const currentPoints = useMemo(() => current ? curvePoints(current).filter((p) => p.minute >= -60 && p.minute <= 0) : [], [current]);
+  const currentPoints = useMemo(() => current ? curvePoints(current).filter((p) => p.minute >= -60 && p.minute <= 120) : [], [current]);
   const focused = history?.matches[selected];
   const markers = [
     ...(current ? current.injections.map((event) => ({ ...event, snapshot: current, color: "var(--foreground)", source: "This meal", lane: 0 })) : []),
     ...(focused ? focused.snapshot.injections.map((event) => ({ ...event, snapshot: focused.snapshot, color: HISTORY_COLORS[selected % HISTORY_COLORS.length], source: focused.meal.name, lane: 2 })) : []),
   ].map((event) => ({ ...event, minute: (Date.parse(event.injected_at) - Date.parse(event.snapshot.window.meal_time)) / 60000 }))
     .filter((event) => event.minute >= -60 && event.minute <= 120);
-  return <div className="h-full w-full" role="img" aria-label={`Glucose from 60 minutes before to 120 minutes after eating. This meal uses a dark line in light mode, a light line in dark mode, through minute zero. ${series[selected]?.name ? `${series[selected].name} highlighted.` : "Historical curves are muted; scroll to explore."} ${markers.length ? `Recorded insulin: ${markers.map((event) => `${event.source}, ${event.dose_units} units, ${Math.round(event.minute)} minutes from eating`).join("; ")}.` : "No insulin markers in this window."} Values in milligrams per decilitre.`}>
+  return <div className="h-full w-full" role="img" aria-label={`Glucose from 60 minutes before to 120 minutes after eating. This meal uses a dark line in light mode, a light line in dark mode, including available readings through 120 minutes after eating. ${series[selected]?.name ? `${series[selected].name} highlighted.` : "Historical curves are muted; scroll to explore."} ${markers.length ? `Recorded insulin: ${markers.map((event) => `${event.source}, ${event.dose_units} units, ${Math.round(event.minute)} minutes from eating`).join("; ")}.` : "No insulin markers in this window."} Values in milligrams per decilitre.`}>
     <ResponsiveContainer width="100%" height="100%" minWidth={0}>
       <LineChart data={[{ minute: -60 }, { minute: 120 }]} margin={{ top: 22, right: 20, left: 0, bottom: 20 }} accessibilityLayer>
         <CartesianGrid stroke="var(--border)" strokeDasharray="3 5" vertical={false} />

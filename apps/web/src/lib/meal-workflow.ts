@@ -45,7 +45,7 @@ export function workflowReducer(state: Workflow, action: WorkflowAction): Workfl
 }
 
 export function comparisonDomain(history: SimilarMealsResponse | null, current: Snapshot | null = null): [number, number] {
-  const values = [...(history?.matches.map(({ snapshot }) => ({ snapshot, end: 120 })) ?? []), ...(current ? [{ snapshot: current, end: 0 }] : [])].flatMap(({ snapshot, end }) => snapshot.readings
+  const values = [...(history?.matches.map(({ snapshot }) => ({ snapshot, end: 120 })) ?? []), ...(current ? [{ snapshot: current, end: 120 }] : [])].flatMap(({ snapshot, end }) => snapshot.readings
     .filter((r) => !r.conflict_detected && (Date.parse(r.measured_at) - Date.parse(snapshot.window.meal_time)) / 60000 >= -60
       && (Date.parse(r.measured_at) - Date.parse(snapshot.window.meal_time)) / 60000 <= end)
     .map((r) => r.glucose_mg_dl));

@@ -8,6 +8,8 @@ test("save once, browse fixed axes, add follow-up, and reopen a saved meal", asy
   const user = { id: owner, aud: "authenticated", role: "authenticated", email: "synthetic@example.com", app_metadata: {}, user_metadata: {}, created_at: "2026-11-01T00:00:00Z" };
   const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization,content-type,apikey,x-client-info,idempotency-key", "access-control-allow-methods": "GET,POST,PATCH,PUT,OPTIONS" };
   let meal = { id: "22222222-2222-4222-8222-222222222222", user_id: owner, name: "Synthetic lunch", carbohydrates_g: 55, eaten_at: "2026-11-13T04:00:00Z", fraction_consumed: null as number | null, notes: null, notes_at: null, activity_after: null, activity_at: null, context_updated_at: null, created_at: "2026-11-13T04:00:00Z" };
+  let postMealCollected = false;
+  let glucoseRequests = 0;
   let posts = 0;
   let comparisonRequests = 0;
   const requestKeys: string[] = [];
@@ -19,11 +21,14 @@ test("save once, browse fixed axes, add follow-up, and reopen a saved meal", asy
     const request = route.request();
     const url = new URL(request.url());
     if (request.method() === "OPTIONS") return route.fulfill({ headers: cors, status: 204 });
-    if (url.pathname.endsWith("/glucose")) return route.fulfill({ headers: cors, json: {
-      window: { meal_time: meal.eaten_at, status: "partial", last_error: null },
-      readings: [...Array.from({ length: 13 }, (_, i) => -60 + i * 5), 15].map((minute) => ({ measured_at: new Date(Date.parse(meal.eaten_at) + minute * 60000).toISOString(), glucose_mg_dl: minute > 0 ? 999 : 110 + minute / 6, conflict_detected: false })),
-      meals: [], injections: [{ id: "current-insulin", dose_units: "2.5", injected_at: new Date(Date.parse(meal.eaten_at) - 10 * 60000).toISOString() }], activities: [], notes: [],
-    } });
+    if (url.pathname.endsWith("/glucose")) {
+      glucoseRequests++;
+      return route.fulfill({ headers: cors, json: {
+        window: { meal_time: meal.eaten_at, status: postMealCollected ? "ready" : "pending", last_error: null },
+        readings: Array.from({ length: postMealCollected ? 37 : 13 }, (_, i) => -60 + i * 5).map((minute) => ({ measured_at: new Date(Date.parse(meal.eaten_at) + minute * 60000).toISOString(), glucose_mg_dl: minute === 60 ? 310 : 110 + minute / 6, conflict_detected: false })),
+        meals: [], injections: [{ id: "current-insulin", dose_units: "2.5", injected_at: new Date(Date.parse(meal.eaten_at) - 10 * 60000).toISOString() }], activities: [], notes: [],
+      } });
+    }
     if (request.method() === "POST" && url.pathname === "/meals") {
       posts++; requestKeys.push(request.headers()["idempotency-key"]);
       meal = { ...meal, ...request.postDataJSON() };
@@ -42,6 +47,7 @@ test("save once, browse fixed axes, add follow-up, and reopen a saved meal", asy
     if (url.pathname === "/meals") return route.fulfill({ headers: cors, json: [meal] });
     return route.fulfill({ headers: cors, json: meal });
   });
+  await page.clock.install();
   await page.goto(`${process.env.MEALOG_WEB_URL}/login`);
   await page.getByLabel("Email", { exact: true }).fill(user.email);
   await page.getByLabel("Password", { exact: true }).fill("synthetic-password");
@@ -103,6 +109,19 @@ test("save once, browse fixed axes, add follow-up, and reopen a saved meal", asy
   await expect(page.getByText("2 of 3", { exact: true })).toBeVisible();
   expect((await graph.boundingBox())?.y).toBeCloseTo(before!.y, 0);
   await touch.detach();
+  // Model the final collector job completing while this meal is still open.
+  const requestsBeforeCollection = glucoseRequests;
+  postMealCollected = true;
+  await page.clock.fastForward(60_000);
+  await expect.poll(() => glucoseRequests).toBeGreaterThan(requestsBeforeCollection);
+  await expect.poll(async () => page.locator('[class*="currentLine"] .recharts-line-curve').evaluate((path) => {
+    const box = (path as SVGGraphicsElement).getBBox();
+    return box.x + box.width;
+  })).toBeGreaterThan(zeroX + 20);
+  // The last sample is at +120, and the new peak must fit inside the Y axis.
+  await expect(page.locator('[class*="currentLine"] .recharts-line-dot')).toHaveCount(37);
+  await expect.poll(async () => (await page.locator(".recharts-yAxis .recharts-cartesian-axis-tick-value").allTextContents()).map(Number).some((value) => value >= 310)).toBe(true);
+  await expect(page.getByText("This meal · available readings", { exact: true })).toBeVisible();
   await page.waitForTimeout(400);
   await page.screenshot({ path: "test-results/home-comparison-mobile.png" });
   await page.getByRole("button", { name: "Add meal details", exact: true }).click();

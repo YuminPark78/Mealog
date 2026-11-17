@@ -75,7 +75,7 @@ export function MealComparisonCard(p: Props) {
         if (!matches.length) return;
         if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); choose(selected + (event.key === "ArrowDown" ? 1 : -1)); }
       }}>
-        <div className={styles.graphLegend}><span><i className={styles.currentSwatch} />This meal · through 0 min</span><span><i className={styles.historySwatch} />Past meals · U = insulin units</span></div>
+        <div className={styles.graphLegend}><span><i className={styles.currentSwatch} />This meal · available readings</span><span><i className={styles.historySwatch} />Past meals · U = insulin units</span></div>
         <div className={styles.graphCanvas}><HistoricalGlucoseChart history={p.history} current={current} selected={p.selectedId ? selected : -1} /></div>
       </div>
     {!!matches.length && <span role="status" aria-live="polite" className="sr-only">{selected + 1} of {matches.length}</span>}
