@@ -63,3 +63,20 @@ export function curvePoints(snapshot: Snapshot): CurvePoint[] {
 
     return points;
 }
+
+// Match the linear chart segments without bridging missing/conflicting samples
+// or extrapolating beyond the available curve.
+export function glucoseAtMinute(points: CurvePoint[], minute: number): number | null {
+    if (!Number.isFinite(minute)) return null;
+    for (let index = 0; index < points.length; index++) {
+        const point = points[index];
+        if (point.minute === minute) return point.glucose;
+        if (point.minute > minute) {
+            const previous = points[index - 1];
+            if (!previous || previous.glucose === null || point.glucose === null) return null;
+            const fraction = (minute - previous.minute) / (point.minute - previous.minute);
+            return previous.glucose + fraction * (point.glucose - previous.glucose);
+        }
+    }
+    return null;
+}

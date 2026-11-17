@@ -92,6 +92,22 @@ test("save once, browse fixed axes, add follow-up, and reopen a saved meal", asy
   const currentRight = await page.locator('[class*="currentLine"] .recharts-line-curve').evaluate((path) => { const box = (path as SVGGraphicsElement).getBBox(); return box.x + box.width; });
   expect(currentRight).toBeLessThanOrEqual(zeroX + 1);
   await expect(page.getByText("2 U", { exact: true })).toBeVisible();
+  // Each ring and center sit on the sample from their own curve, at injection time.
+  for (const [curveId, color, sample] of [["current", "var(--foreground)", 10], ["historical-1", "#a855f7", 9]] as const) {
+    const marker = page.locator(`.insulin-marker[data-curve-id="${curveId}"]`);
+    await expect(marker).toHaveCount(1);
+    const ring = marker.locator("circle").nth(0);
+    const center = marker.locator("circle").nth(1);
+    await expect(ring).toHaveAttribute("r", "7");
+    await expect(center).toHaveAttribute("r", "3");
+    await expect(ring).toHaveAttribute("stroke", color);
+    const sampleDot = page.locator(`.recharts-line-dot[fill="${color}"]`).nth(sample);
+    for (const coordinate of ["cx", "cy"]) {
+      await expect(center).toHaveAttribute(coordinate, (await sampleDot.getAttribute(coordinate))!);
+      await expect(ring).toHaveAttribute(coordinate, (await sampleDot.getAttribute(coordinate))!);
+    }
+  }
+
   expect(await page.locator(".recharts-line-curve").nth(1).getAttribute("d")).toContain("L");
   await graph.hover();
   await page.mouse.wheel(0, 500);

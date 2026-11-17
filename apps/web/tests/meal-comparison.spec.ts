@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { curvePoints } from "../src/lib/meal-comparison";
+import { curvePoints, glucoseAtMinute } from "../src/lib/meal-comparison";
 import type { Snapshot } from "../src/components/glucose/meal-glucose-chart";
 import { comparisonDomain } from "../src/lib/meal-workflow";
 import type { SimilarMealsResponse } from "../src/lib/meal-comparison";
@@ -60,4 +60,31 @@ test("shared axes include post-meal readings for both current and historical mea
     expect(comparisonDomain(null, current)).toEqual([60, 340]);
     expect(comparisonDomain(null, snapshot([[-60, 90], [0, 110]]))).toEqual([60, 140]);
     expect(comparisonDomain(null, snapshot([]))).toEqual([60, 200]);
+});
+
+
+test("insulin aligns to its own curve at the exact injection time", () => {
+    const current = [{ minute: -5, glucose: 100 }, { minute: 0, glucose: 120 }];
+    const historical = [{ minute: -5, glucose: 200 }, { minute: 0, glucose: 180 }];
+    expect(glucoseAtMinute(current, -5)).toBe(100);
+    expect(glucoseAtMinute(current, -2)).toBe(112);
+    expect(glucoseAtMinute(historical, -2)).toBe(188);
+    expect(glucoseAtMinute(current, 0)).toBe(120);
+    expect(glucoseAtMinute(current, -6)).toBeNull();
+    expect(glucoseAtMinute(current, 1)).toBeNull();
+    expect(glucoseAtMinute([], 0)).toBeNull();
+});
+
+test("insulin markers do not bridge gaps or conflicting readings", () => {
+    const points = [
+        { minute: 0, glucose: 100 },
+        { minute: 5, glucose: null },
+        { minute: 10, glucose: 120 },
+        { minute: 20, glucose: null },
+        { minute: 30, glucose: 140 },
+    ];
+    for (const minute of [2, 5, 7, 15, 20, 25]) {
+        expect(glucoseAtMinute(points, minute)).toBeNull();
+    }
+    expect(glucoseAtMinute(points, 10)).toBe(120);
 });
