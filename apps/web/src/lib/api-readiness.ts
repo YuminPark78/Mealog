@@ -1,14 +1,15 @@
+import { apiUrl } from "./api-url";
+
 /** Wake the API using read-only health requests before sending an account action. */
 export async function waitForApi({ signal, timeoutMs = 120_000 }: { signal: AbortSignal; timeoutMs?: number }): Promise<void> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (!baseUrl) throw new Error("NEXT_PUBLIC_API_BASE_URL is missing.");
+  const healthUrl = apiUrl("/health");
   const deadline = AbortSignal.timeout(timeoutMs);
   const waiting = AbortSignal.any([signal, deadline]);
   let delay = 1_000;
   try {
     while (!waiting.aborted) {
       try {
-        const response = await fetch(`${baseUrl}/health`, {
+        const response = await fetch(healthUrl, {
           cache: "no-store",
           signal: AbortSignal.any([waiting, AbortSignal.timeout(15_000)]),
         });

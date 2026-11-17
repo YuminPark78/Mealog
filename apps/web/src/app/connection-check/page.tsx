@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { apiUrl } from "@/lib/api-url";
 
 export default function ConnectionCheckPage() {
     const [output, setOutput] = useState("Click to test the connections.");
@@ -11,14 +12,8 @@ export default function ConnectionCheckPage() {
         const results: string[] = [];
 
         try {
-            const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-            if (!baseUrl) {
-                throw new Error("NEXT_PUBLIC_API_BASE_URL is missing.");
-            }
-
             for (const path of ["/health", "/health/database"]) {
-                const response = await fetch(`${baseUrl}${path}`, {
+                const response = await fetch(apiUrl(path), {
                     cache: "no-store",
                     signal: AbortSignal.timeout(10000),
                 });

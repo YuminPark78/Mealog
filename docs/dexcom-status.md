@@ -18,3 +18,5 @@ npm run lint
 npx tsc --noEmit
 MEALOG_WEB_URL=http://localhost:3000 npx playwright test tests/api-readiness.spec.ts tests/dexcom-status.spec.ts --workers=1
 ```
+
+API URLs are joined through `lib/api-url.ts`, so a trailing slash in `NEXT_PUBLIC_API_BASE_URL` cannot produce paths such as `//health` or `//account/dexcom`. The Account card keeps Connect available if saved status cannot load, while clearly marking that state as unverified. An unavailable endpoint is never treated as proof that an account has no saved records.

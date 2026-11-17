@@ -106,7 +106,10 @@ function MealDeck({ session }: { session: Session }) {
   }, [dirty]);
 
   function go(step: Step, direction: "forward" | "backward" = "forward") {
-    transition(() => { setError(""); dispatch({ type: "go", step, direction }); }, direction);
+    // Clear the previous error before starting a request. A delayed view-transition
+    // callback must not erase an error returned by a fast photo-analysis response.
+    setError("");
+    transition(() => dispatch({ type: "go", step, direction }), direction);
   }
   function transition(update: () => void, direction: "forward" | "backward" = "forward") {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;

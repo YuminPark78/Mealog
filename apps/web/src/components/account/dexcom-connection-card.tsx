@@ -146,9 +146,10 @@ export function DexcomConnectionCard({ accessToken }: { accessToken: string }) {
   const needsAttention = enabled && (
     status?.state === "needs_attention" || status?.collection_needs_attention
   );
+  const canConnect = !enabled && !showForm && !loadingStatus;
   const title = stage === "starting" ? "Starting connection service…" : busy
     ? action === "connect" ? "Connecting…" : action === "check" ? "Checking Dexcom…" : "Disconnecting…"
-    : statusError && !status ? "Status unavailable"
+    : statusError && !status ? "Connection not checked"
       : needsAttention ? "Connection needs attention"
         : status ? titles[status.state] : "Loading connection…";
   const description = stage === "starting"
@@ -174,11 +175,10 @@ export function DexcomConnectionCard({ accessToken }: { accessToken: string }) {
       </CardHeader>
       <CardContent className="space-y-5 px-5 sm:px-6">
 
-        {statusError ? (
-          <Button type="button" disabled={busy || loadingStatus} className="min-h-11" onClick={() => setRevision((value) => value + 1)}>Try again</Button>
-        ) : !enabled && status && !showForm ? (
-            <Button type="button" disabled={busy || loadingStatus} className="min-h-11" aria-expanded={showForm} aria-controls={formId} onClick={() => setShowForm(true)}>Connect Dexcom account</Button>
-        ) : null}
+        {(canConnect || statusError) && <div className="flex flex-wrap gap-2">
+          {canConnect && <Button type="button" disabled={busy} className="min-h-11" aria-expanded={showForm} aria-controls={formId} onClick={() => setShowForm(true)}>Connect Dexcom account</Button>}
+          {statusError && <Button type="button" variant="outline" disabled={busy || loadingStatus} className="min-h-11" onClick={() => setRevision((value) => value + 1)}>Try again</Button>}
+        </div>}
 
         {enabled && (
           <div className="space-y-4 rounded-xl border p-4">

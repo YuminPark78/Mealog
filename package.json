@@ -22,5 +22,8 @@
   "homepage": "https://github.com/YuminPark78/Mealog#readme",
   "devDependencies": {
     "supabase": "2.121.0"
+  },
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
   }
 }
