@@ -1,0 +1,1 @@
+"""ChatGPT-facing MCP adapter for Mealog."""

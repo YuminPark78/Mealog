@@ -13,6 +13,7 @@ from mealog_api.routes.glucose import router as glucose_router
 from mealog_api.routes.meal_estimates import router as meal_estimates_router
 from mealog_api.routes.similar_meals import router as similar_meals_router
 from mealog_api.routes.account import router as account_router
+from mealog_api.mcp.integration import lifespan as mcp_lifespan, mount_mcp
 
 
 class ConnectionCheck(BaseModel):
@@ -22,7 +23,7 @@ class ConnectionCheck(BaseModel):
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Mealog API")
+app = FastAPI(title="Mealog API", lifespan=mcp_lifespan)
 app.include_router(meals_router)
 app.include_router(insulin_events_router)
 app.include_router(glucose_router)
@@ -77,3 +78,5 @@ def database_health():
             status_code=503,
             detail="Database check failed. See the backend terminal.",
         ) from None
+
+mount_mcp(app)
