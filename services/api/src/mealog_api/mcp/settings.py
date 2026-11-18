@@ -14,9 +14,9 @@ class MCPSettings(BaseSettings):
     allowed_client_ids: list[str] = []
 
     @model_validator(mode="after")
-    def require_client(self):
-        if self.enabled and not self.allowed_client_ids:
-            raise ValueError("Set MEALOG_MCP_ALLOWED_CLIENT_IDS before enabling MCP.")
+    def validate_public_url(self):
+        # An empty allowlist permits OAuth discovery during initial setup.
+        # SupabaseTokenVerifier rejects every token until a client is added.
         if self.public_url.path != "/mcp" or self.public_url.query or self.public_url.fragment:
             raise ValueError("MCP public URL must end in /mcp with no query or fragment.")
         return self

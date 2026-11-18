@@ -16,6 +16,9 @@ class SupabaseTokenVerifier:
         self.keys = PyJWKClient(self.issuer + "/.well-known/jwks.json", timeout=10)
 
     def _verify(self, token: str) -> AccessToken | None:
+        if not self.allowed_client_ids:
+            # Bootstrap: discovery may run, but no caller can execute tools.
+            return None
         try:
             key = self.keys.get_signing_key_from_jwt(token).key
             claims = jwt.decode(
