@@ -31,7 +31,7 @@ def test_bootstrap_still_validates_public_url():
                     public_url="https://mealog.example/wrong", allowed_client_ids=[])
 
 
-def test_empty_allowlist_rejects_token_without_fetching_keys():
+def test_empty_allowlist_rejects_token_without_fetching_keys(caplog):
     verifier = SupabaseTokenVerifier("https://project.supabase.co", [])
 
     def unexpected_fetch(_token):
@@ -39,6 +39,8 @@ def test_empty_allowlist_rejects_token_without_fetching_keys():
 
     verifier.keys = SimpleNamespace(get_signing_key_from_jwt=unexpected_fetch)
     assert verifier._verify("any-token") is None
+    assert "no_allowed_clients" in caplog.text
+    assert "any-token" not in caplog.text
 
 
 def test_bootstrap_exposes_discovery_but_blocks_tool_calls():
@@ -78,7 +80,7 @@ def test_bootstrap_exposes_discovery_but_blocks_tool_calls():
             assert "resource_metadata=" in response.headers["www-authenticate"]
 
 
-def test_configured_client_accepts_only_its_signed_tokens():
+def test_configured_client_accepts_only_its_signed_tokens(caplog):
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     verifier = SupabaseTokenVerifier("https://project.supabase.co", ["registered-client"])
     verifier.keys = SimpleNamespace(
@@ -95,3 +97,31 @@ def test_configured_client_accepts_only_its_signed_tokens():
     assert accepted.subject == subject
     wrong_client = jwt.encode({**claims, "client_id": "other-client"}, private_key, algorithm="RS256")
     assert verifier._verify(wrong_client) is None
+    assert "client_not_allowed" in caplog.text
+    assert wrong_client not in caplog.text
+    assert subject not in caplog.text
+
+
+@pytest.mark.parametrize("claims_change, expected_reason", [
+    ({"exp": 1}, "ExpiredSignatureError"),
+    ({"aud": "another-api"}, "InvalidAudienceError"),
+    ({"iss": "https://another-issuer.example"}, "InvalidIssuerError"),
+])
+def test_token_failure_logs_reason_without_credentials(caplog, claims_change, expected_reason):
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    verifier = SupabaseTokenVerifier("https://project.supabase.co", ["registered-client"])
+    verifier.keys = SimpleNamespace(
+        get_signing_key_from_jwt=lambda _: SimpleNamespace(key=private_key.public_key())
+    )
+    subject = str(uuid4())
+    claims = {
+        "iss": verifier.issuer, "aud": "authenticated", "sub": subject,
+        "client_id": "registered-client", "role": "authenticated",
+        "iat": int(time.time()), "exp": int(time.time()) + 300,
+        **claims_change,
+    }
+    token = jwt.encode(claims, private_key, algorithm="RS256")
+    assert verifier._verify(token) is None
+    assert expected_reason in caplog.text
+    assert token not in caplog.text
+    assert subject not in caplog.text

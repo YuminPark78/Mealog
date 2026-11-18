@@ -18,6 +18,7 @@ class SupabaseTokenVerifier:
     def _verify(self, token: str) -> AccessToken | None:
         if not self.allowed_client_ids:
             # Bootstrap: discovery may run, but no caller can execute tools.
+            logger.warning("MCP authentication rejected: no_allowed_clients")
             return None
         try:
             key = self.keys.get_signing_key_from_jwt(token).key
@@ -31,8 +32,10 @@ class SupabaseTokenVerifier:
             )
             client_id = claims["client_id"]
             if client_id not in self.allowed_client_ids:
+                logger.warning("MCP authentication rejected: client_not_allowed")
                 return None
             if claims.get("role") != "authenticated" or claims.get("is_anonymous") is True:
+                logger.warning("MCP authentication rejected: not_authenticated_user")
                 return None
             subject = str(UUID(claims["sub"]))
             # The audience AND registered OAuth client identify this integration.
@@ -45,7 +48,10 @@ class SupabaseTokenVerifier:
                 subject=subject,
                 claims={"iss": self.issuer},
             )
-        except (jwt.PyJWTError, ValueError, TypeError, KeyError):
+        except (jwt.PyJWTError, ValueError, TypeError, KeyError) as error:
+            # Exception classes identify expiry/audience/issuer/signature/key
+            # failures without logging a token, its claims, or error text.
+            logger.warning("MCP authentication rejected: %s", type(error).__name__)
             return None
         except Exception as error:
             # Never log raw tokens, credentials, or decoded user information.
