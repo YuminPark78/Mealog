@@ -86,7 +86,7 @@ export function InsulinWorkspace({ token, onDirty, active }: { token: string; on
         <FieldGroup>
           <Field><FieldLabel htmlFor="home-dose">Dose — units</FieldLabel><Input id="home-dose" name="dose_units" type="number" inputMode="decimal" min="0.001" max="99999.999" step="0.001" required defaultValue={editing?.dose_units ?? ""} disabled={busy || locked} /></Field>
           <Field><FieldLabel htmlFor="home-insulin-name">Insulin name — optional</FieldLabel><Input id="home-insulin-name" name="insulin_name" maxLength={100} defaultValue={editing?.insulin_name ?? ""} disabled={busy || locked} /></Field>
-          <Field><FieldLabel htmlFor="home-injected-at">Injection time</FieldLabel><Input id="home-injected-at" name="injected_at" type="datetime-local" step="0.001" required defaultValue={toLocalDateTime(editing?.injected_at ?? new Date().toISOString())} disabled={busy || locked} /></Field>
+          <Field><FieldLabel htmlFor="home-injected-at">Injection time</FieldLabel><Input id="home-injected-at" name="injected_at" type="datetime-local" step="60" required defaultValue={toLocalDateTime(editing?.injected_at ?? new Date().toISOString())} disabled={busy || locked} /></Field>
           <Field><FieldLabel htmlFor="home-linked-meal">Link to a meal — optional</FieldLabel><select id="home-linked-meal" name="meal_id" defaultValue={editing?.meal_id ?? ""} disabled={busy || locked || loading} className="min-h-11 rounded-lg border bg-background px-3">
             <option value="">No meal link</option>
             {editing?.meal_id && !meals.some((meal) => meal.id === editing.meal_id) && <option value={editing.meal_id}>Previously linked meal</option>}

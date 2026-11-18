@@ -3,7 +3,7 @@ export function toLocalDateTime(value: string | null): string {
     if (!value) return "";
     const date = new Date(value);
     const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-    return local.toISOString().slice(0, 23);
+    return local.toISOString().slice(0, 16);
 }
 
 /** Preserve the original instant (and precision) when its input was unchanged. */

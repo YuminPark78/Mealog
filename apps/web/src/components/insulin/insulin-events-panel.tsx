@@ -140,7 +140,7 @@ export default function InsulinEventsPanel({
                             name="injected_at"
                             defaultValue={toLocalDateTime(editing?.injected_at ?? null)}
                             type="datetime-local"
-                            step="0.001"
+                            step="60"
                             required
                             className="block w-full rounded border p-2"
                         />

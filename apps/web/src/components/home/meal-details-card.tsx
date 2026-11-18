@@ -31,7 +31,7 @@ export function MealDetailsCard(p: Props) {
               </select><p className="text-xs text-muted-foreground">Changing this replaces the carbohydrate estimate below. This is your planned serving, not the amount already eaten.</p></Field>}
             <Field><FieldLabel htmlFor="meal-carbs">Carbohydrates in my serving — grams</FieldLabel><Input id="meal-carbs" type="number" inputMode="decimal" min="0" max="999999.99" step="0.01" value={p.draft.carbs} disabled={p.saving || p.locked} onChange={(e) => p.onChange({ carbs: e.target.value })} placeholder="Optional" />
               {p.draft.carbs === "" && <p className="text-xs text-muted-foreground">You can save without this, but similar-meal comparisons need a carbohydrate amount.</p>}</Field>
-            <Field><FieldLabel htmlFor="meal-time">Eating time</FieldLabel><Input id="meal-time" type="datetime-local" step="0.001" required value={p.draft.eatenAt} disabled={p.saving || p.locked} onChange={(e) => p.onChange({ eatenAt: e.target.value })} /><p className="text-xs text-muted-foreground">Your device’s local time.</p></Field>
+            <Field><FieldLabel htmlFor="meal-time">Eating time</FieldLabel><Input id="meal-time" type="datetime-local" step="60" required value={p.draft.eatenAt} disabled={p.saving || p.locked} onChange={(e) => p.onChange({ eatenAt: e.target.value })} /><p className="text-xs text-muted-foreground">Your device’s local time.</p></Field>
             {!!p.estimate?.assumptions.length && <details className="text-xs text-muted-foreground"><summary>About this estimate</summary><ul className="mt-2 list-disc pl-4">{p.estimate.assumptions.map((text, i) => <li key={i}>{text}</li>)}</ul></details>}
           </FieldGroup>
         </form>
