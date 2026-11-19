@@ -18,13 +18,6 @@
     font-family: var(--font-geist-sans), sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-    .screen {
-        --welcome-background: #232729;
-        --welcome-foreground: #f2ede3;
-    }
-}
-
 .brand {
     display: flex;
     flex-direction: column;

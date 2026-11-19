@@ -1,5 +1,5 @@
 import WelcomeScreen from "@/components/welcome/welcome-screen";
 
 export default function Home() {
-  return <WelcomeScreen replayAlways />;
+  return <WelcomeScreen />;
 }
